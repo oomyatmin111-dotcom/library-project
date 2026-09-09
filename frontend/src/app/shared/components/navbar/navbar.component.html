@@ -1,0 +1,57 @@
+<header class="comic-nav">
+  <div class="nav-container">
+    <!-- Brand Logo -->
+    <a routerLink="/" class="brand-badge">
+      <span class="brand-dc">DC</span>
+      <span class="brand-vs">VS</span>
+      <span class="brand-marvel">MARVEL</span>
+      <span class="brand-sub">COMICS & E-BOOKS</span>
+    </a>
+
+    <!-- Nav Links -->
+    <nav class="nav-links">
+      <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
+        <span class="nav-icon">⚡</span> Home
+      </a>
+      <a routerLink="/" [queryParams]="{ universe: 'dc' }" routerLinkActive="active-link">
+        <span class="badge-dc">DC</span> DC Universe
+      </a>
+      <a routerLink="/" [queryParams]="{ universe: 'marvel' }" routerLinkActive="active-link">
+        <span class="badge-marvel">MARVEL</span> Marvel Universe
+      </a>
+      <a routerLink="/" [queryParams]="{ type: 'ebook' }" routerLinkActive="active-link">
+        <span class="nav-icon">📖</span> E-Books
+      </a>
+      <a routerLink="/library" routerLinkActive="active-link">
+        <span class="nav-icon">📚</span> My Library
+      </a>
+    </nav>
+
+    <!-- Search & Admin -->
+    <div class="nav-right">
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search comics, heroes..."
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          (keyup.enter)="onSearch()"
+        />
+        <button (click)="onSearch()" class="search-btn">🔍</button>
+      </div>
+
+      <a routerLink="/admin" class="admin-link" title="Open Admin Panel">
+        ⚙️ Admin
+      </a>
+
+      <!-- Profile indicator -->
+      <div class="user-pill">
+        <div class="user-avatar">🦇</div>
+        <div class="user-meta">
+          <span class="user-name">Bruce Wayne</span>
+          <span class="user-role">Member</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

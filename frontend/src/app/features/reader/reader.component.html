@@ -1,0 +1,128 @@
+<div class="reader-viewport">
+  @if (issue(); as iss) {
+    <!-- Top Reader Bar -->
+    <div class="reader-top-bar" [class.hidden]="!showControls()">
+      <div class="top-left">
+        <a [routerLink]="['/comic', iss.comic?.slug || iss.comicId]" class="btn-exit">
+          ✕ Exit Reader
+        </a>
+        <div class="comic-info-pill">
+          <span class="comic-name">{{ iss.comic?.title }}</span>
+          <span class="issue-name">{{ iss.title }}</span>
+        </div>
+      </div>
+
+      <!-- Live Sync Status -->
+      <div class="sync-status-badge">
+        <span class="sync-dot"></span>
+        <span>Auto-Synced: <strong>{{ syncedPercent() }}%</strong> (Page {{ currentPage() }}/{{ totalPages }})</span>
+      </div>
+
+      <!-- Controls Right -->
+      <div class="top-right">
+        <!-- Mode Switcher -->
+        <div class="mode-switch">
+          <button
+            class="mode-btn"
+            [class.active]="readingMode() === 'single'"
+            (click)="setMode('single')"
+            title="Single Page Mode"
+          >
+            📄 Flip Mode
+          </button>
+          <button
+            class="mode-btn"
+            [class.active]="readingMode() === 'scroll'"
+            (click)="setMode('scroll')"
+            title="Webtoon Continuous Scroll"
+          >
+            📜 Scroll Mode
+          </button>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="zoom-box">
+          <button (click)="zoomOut()" class="zoom-btn" title="Zoom Out">−</button>
+          <span (click)="resetZoom()" class="zoom-val" title="Click to Reset">{{ (zoomLevel() * 100) | number:'1.0-0' }}%</span>
+          <button (click)="zoomIn()" class="zoom-btn" title="Zoom In">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN READING CANVAS -->
+    <div class="reader-content">
+      @if (readingMode() === 'single') {
+        <!-- Single Page / Flip Mode -->
+        <div class="single-mode-wrapper">
+          <button
+            class="nav-arrow nav-prev"
+            [disabled]="currentPage() <= 1"
+            (click)="prevPage()"
+            title="Previous Page (Left Arrow)"
+          >
+            ‹
+          </button>
+
+          <div class="page-canvas" [style.transform]="'scale(' + zoomLevel() + ')'">
+            <img
+              [src]="currentImage"
+              [alt]="'Page ' + currentPage()"
+              class="comic-page-image"
+              (click)="nextPage()"
+            />
+          </div>
+
+          <button
+            class="nav-arrow nav-next"
+            [disabled]="currentPage() >= totalPages"
+            (click)="nextPage()"
+            title="Next Page (Right Arrow / Space)"
+          >
+            ›
+          </button>
+        </div>
+      } @else {
+        <!-- Webtoon Continuous Scroll Mode -->
+        <div class="scroll-mode-wrapper" [style.transform]="'scale(' + zoomLevel() + ')'">
+          @for (page of pages(); track page.pageId) {
+            <div class="scroll-page-item" id="page-{{ page.pageNumber }}">
+              <img [src]="page.imageUrl" [alt]="'Page ' + page.pageNumber" loading="lazy" />
+              <div class="scroll-page-badge">Page {{ page.pageNumber }}</div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Bottom Progress & Page Jumper Slider Bar -->
+    <div class="reader-bottom-bar" [class.hidden]="!showControls()">
+      <div class="bottom-container">
+        <button class="slider-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">
+          ◀ Previous
+        </button>
+
+        <div class="slider-track-box">
+          <span class="page-counter">Page {{ currentPage() }} of {{ totalPages }}</span>
+          <input
+            type="range"
+            [min]="1"
+            [max]="totalPages"
+            [value]="currentPage()"
+            (input)="jumpToPage(+$any($event.target).value)"
+            class="page-slider"
+          />
+          <span class="percent-label">{{ syncedPercent() }}%</span>
+        </div>
+
+        <button class="slider-btn" [disabled]="currentPage() >= totalPages" (click)="nextPage()">
+          Next ▶
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="reader-loading">
+      <div class="spinner"></div>
+      <p>Loading Comic Panels & High-Res Pages...</p>
+    </div>
+  }
+</div>

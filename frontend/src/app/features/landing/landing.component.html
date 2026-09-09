@@ -1,0 +1,302 @@
+<div class="landing-page">
+  <!-- 1. HERO BANNER WITH DC VS MARVEL SPLIT & ANIMATIONS -->
+  <section class="hero-split-section" [class.theme-marvel]="heroUniverse() === 'marvel'" [class.theme-dc]="heroUniverse() === 'dc'">
+    <div class="hero-bg-overlay"></div>
+    <div class="hero-container">
+      <div class="hero-content">
+        <!-- Universe Switcher Pills -->
+        <div class="universe-switch">
+          <button
+            class="switch-btn dc-btn"
+            [class.active]="heroUniverse() === 'dc'"
+            (click)="toggleHeroUniverse('dc')"
+          >
+            🦇 DC UNIVERSE
+          </button>
+          <span class="versus-tag">VS</span>
+          <button
+            class="switch-btn marvel-btn"
+            [class.active]="heroUniverse() === 'marvel'"
+            (click)="toggleHeroUniverse('marvel')"
+          >
+            🕷️ MARVEL UNIVERSE
+          </button>
+        </div>
+
+        <!-- Dynamic Title depending on universe -->
+        <div class="hero-titles">
+          @if (heroUniverse() === 'dc') {
+            <span class="hero-kicker">GOTHAM & METROPOLIS SAGAS</span>
+            <h1 class="hero-main-title">
+              BATMAN <span class="text-glow-dc">YEAR ONE</span> & JUSTICE LEAGUE
+            </h1>
+            <p class="hero-desc">
+              Experience the dark alleys of Gotham City, the multiversal paradoxes of The Flash, and the immortal legacy of DC Comics with interactive animated readers.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/reader/1" class="btn-hero-primary dc-action">
+                ⚡ Read Batman Issue #1
+              </a>
+              <button (click)="setUniverse('dc')" class="btn-hero-secondary">
+                Explore DC Vault
+              </button>
+            </div>
+          } @else {
+            <span class="hero-kicker">EARTH-616 & MULTIVERSE RIFT</span>
+            <h1 class="hero-main-title">
+              THE AMAZING <span class="text-glow-marvel">SPIDER-MAN</span> & AVENGERS
+            </h1>
+            <p class="hero-desc">
+              Swing through alternate dimensions with Peter Parker and witness the Infinity Gauntlet War in vivid digital panel-by-panel action with instant progress syncing.
+            </p>
+            <div class="hero-actions">
+              <a routerLink="/reader/3" class="btn-hero-primary marvel-action">
+                🕷️ Read Spider-Man Issue #1
+              </a>
+              <button (click)="setUniverse('marvel')" class="btn-hero-secondary">
+                Explore Marvel Vault
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Key Metrics Badges -->
+        <div class="hero-stats">
+          <div class="stat-pill">
+            <span class="stat-value">50,000+</span>
+            <span class="stat-label">Comics & Issues</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-value">Instant</span>
+            <span class="stat-label">Progress Sync</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-value">HD</span>
+            <span class="stat-label">Panel Reader</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visual Art Card with 3D floating effect -->
+      <div class="hero-art-showcase">
+        <div class="hero-card-float">
+          @if (heroUniverse() === 'dc') {
+            <img
+              src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&auto=format&fit=crop&q=80"
+              alt="DC Batman"
+              class="hero-comic-art"
+            />
+            <div class="art-overlay-badge dc-badge">
+              <span class="pulse-dot"></span> DC COMICS EXCLUSIVE
+            </div>
+          } @else {
+            <img
+              src="https://images.unsplash.com/photo-1635863138275-d9b33299680b?w=800&auto=format&fit=crop&q=80"
+              alt="Marvel Spider-Man"
+              class="hero-comic-art"
+            />
+            <div class="art-overlay-badge marvel-badge">
+              <span class="pulse-dot"></span> MARVEL MULTIVERSE
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CONTINUE READING SECTION (USER IN-PROGRESS TRACKING) -->
+  @if (continueReading().length > 0) {
+    <section class="continue-reading-section">
+      <div class="section-container">
+        <div class="section-header">
+          <div class="header-left">
+            <span class="badge-fire">🔥 CONTINUE READING</span>
+            <h2>ဖတ်လက်စ Comic များနှင့် အပိုင်းများ (In-Progress)</h2>
+          </div>
+          <a routerLink="/library" class="view-all-link">My Library သို့ →</a>
+        </div>
+
+        <div class="continue-grid">
+          @for (item of continueReading(); track item.progressId) {
+            <div class="progress-card">
+              <div class="progress-thumb">
+                <img [src]="item.comic.coverImage" [alt]="item.comic.title" />
+                <span class="universe-pill" [class.dc-tag]="item.comic.universe?.slug === 'dc'" [class.marvel-tag]="item.comic.universe?.slug === 'marvel'">
+                  {{ item.comic.universe?.name || 'COMIC' }}
+                </span>
+              </div>
+
+              <div class="progress-info">
+                <h3 class="progress-title">{{ item.comic.title }}</h3>
+                <div class="progress-issue">
+                  <span>📖 {{ item.lastIssue?.title || 'Issue #1' }}</span>
+                </div>
+
+                <!-- Progress Bar with Percentage -->
+                <div class="progress-bar-wrapper">
+                  <div class="progress-meta">
+                    <span class="meta-page">Page {{ item.lastPageNumber }} of {{ item.lastIssue?.totalPages || 10 }}</span>
+                    <span class="meta-percent">{{ item.progressPercent }}% Completed</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill" [style.width.%]="item.progressPercent"></div>
+                  </div>
+                </div>
+
+                <div class="progress-actions">
+                  <a
+                    [routerLink]="['/reader', item.lastIssueId]"
+                    [queryParams]="{ page: item.lastPageNumber }"
+                    class="btn-resume"
+                  >
+                    ▶ Resume at Page {{ item.lastPageNumber }}
+                  </a>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- 3. POPULAR & CATEGORY EXPLORATION -->
+  <section class="explore-section">
+    <div class="section-container">
+      <div class="explore-nav-bar">
+        <!-- Universe Filters -->
+        <div class="filter-tabs">
+          <button
+            class="tab-btn"
+            [class.active]="activeUniverse() === 'all' && activeFilter() !== 'ebook'"
+            (click)="setUniverse('all')"
+          >
+            All Universes
+          </button>
+          <button
+            class="tab-btn dc-tab"
+            [class.active]="activeUniverse() === 'dc'"
+            (click)="setUniverse('dc')"
+          >
+            🦇 DC Comics
+          </button>
+          <button
+            class="tab-btn marvel-tab"
+            [class.active]="activeUniverse() === 'marvel'"
+            (click)="setUniverse('marvel')"
+          >
+            🕷️ Marvel Comics
+          </button>
+          <button
+            class="tab-btn indie-tab"
+            [class.active]="activeUniverse() === 'indie'"
+            (click)="setUniverse('indie')"
+          >
+            ⚔️ Indie & Dark Horse
+          </button>
+          <button
+            class="tab-btn ebook-tab"
+            [class.active]="activeFilter() === 'ebook'"
+            (click)="setFilter('ebook')"
+          >
+            📖 E-Books & Sci-Fi
+          </button>
+        </div>
+
+        <!-- Sort Filter (Popular / Trending) -->
+        <div class="sub-filters">
+          <button
+            class="sub-btn"
+            [class.active]="activeFilter() === 'popular'"
+            (click)="setFilter('popular')"
+          >
+            ⭐ Popular Comics
+          </button>
+          <button
+            class="sub-btn"
+            [class.active]="activeFilter() === 'trending'"
+            (click)="setFilter('trending')"
+          >
+            🔥 Trending
+          </button>
+        </div>
+      </div>
+
+      <!-- Comic Card Grid with 3D Tilt Animations -->
+      <div class="comic-grid">
+        @for (comic of comics(); track comic.comicId) {
+          <div class="comic-card">
+            <div class="comic-cover-wrap">
+              <img [src]="comic.coverImage" [alt]="comic.title" class="comic-cover-img" loading="lazy" />
+
+              <!-- Comic Universe Badge -->
+              <span
+                class="card-badge"
+                [class.dc-bg]="comic.universe?.slug === 'dc'"
+                [class.marvel-bg]="comic.universe?.slug === 'marvel'"
+                [class.ebook-bg]="comic.type === 'EBOOK'"
+              >
+                {{ comic.type === 'EBOOK' ? 'E-BOOK' : (comic.universe?.name || 'COMIC') }}
+              </span>
+
+              <!-- Rating Badge -->
+              <span class="rating-badge">★ {{ comic.rating }}</span>
+
+              <!-- Hover Action Overlay -->
+              <div class="cover-overlay">
+                <a [routerLink]="['/comic', comic.slug]" class="btn-inspect">
+                  View Details & Issues
+                </a>
+                @if (comic.issues && comic.issues.length > 0) {
+                  <a [routerLink]="['/reader', comic.issues[0].issueId]" class="btn-quick-read">
+                    ⚡ Read Issue #1
+                  </a>
+                }
+              </div>
+            </div>
+
+            <div class="comic-details">
+              <div class="comic-meta-row">
+                <span class="comic-year">{{ comic.releaseYear }}</span>
+                <span class="comic-status">{{ comic.status }}</span>
+              </div>
+              <h3 class="comic-title">
+                <a [routerLink]="['/comic', comic.slug]">{{ comic.title }}</a>
+              </h3>
+              <p class="comic-creator">{{ comic.creator || 'DC/Marvel Authors' }}</p>
+
+              <!-- Issues count or reads -->
+              <div class="comic-footer-meta">
+                <span class="views-tag">👁️ {{ comic.viewsCount }} reads</span>
+                <span class="type-tag">{{ comic.type }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. MULTIVERSE SHOWCASE HERO SECTION -->
+  <section class="multiverse-banner">
+    <div class="banner-grid">
+      <div class="banner-box dc-box">
+        <div class="banner-text">
+          <span class="box-kicker">JUSTICE LEAGUE & DARK KNIGHT</span>
+          <h3>THE DC UNIVERSE</h3>
+          <p>Explore Gotham, Metropolis, Central City, and the Multiverse with high-resolution digital art.</p>
+          <button (click)="setUniverse('dc')" class="btn-banner-link">Browse DC Titles →</button>
+        </div>
+      </div>
+
+      <div class="banner-box marvel-box">
+        <div class="banner-text">
+          <span class="box-kicker">AVENGERS ASSEMBLE & SPIDER-VERSE</span>
+          <h3>THE MARVEL UNIVERSE</h3>
+          <p>From Queens to Wakanda and the Quantum Realm, read the most iconic Marvel comic issues.</p>
+          <button (click)="setUniverse('marvel')" class="btn-banner-link">Browse Marvel Titles →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,264 @@
+<div class="admin-page">
+  <div class="admin-container">
+    <!-- Admin Top Header -->
+    <div class="admin-header">
+      <div>
+        <span class="badge-admin">CMS & PORTAL</span>
+        <h1>Admin Control Panel (စီမံခန့်ခွဲမှုစနစ်)</h1>
+        <p>DC & Marvel Comics, E-Books, Issues နှင့် Reading Statistics များကို စီမံခန့်ခွဲသည့်နေရာ</p>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="admin-tabs">
+        <button
+          class="adm-tab"
+          [class.active]="activeTab() === 'dashboard'"
+          (click)="setTab('dashboard')"
+        >
+          📊 Dashboard Overview
+        </button>
+        <button
+          class="adm-tab"
+          [class.active]="activeTab() === 'comics'"
+          (click)="setTab('comics')"
+        >
+          📚 Manage Comics ({{ comics().length }})
+        </button>
+        <button
+          class="adm-tab btn-highlight"
+          [class.active]="activeTab() === 'add-comic'"
+          (click)="setTab('add-comic')"
+        >
+          ➕ Add New Comic / E-Book
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    @if (notification()) {
+      <div class="toast-alert">
+        {{ notification() }}
+      </div>
+    }
+
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    @if (activeTab() === 'dashboard') {
+      <div class="dashboard-section">
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="m-icon">📖</span>
+            <div class="m-info">
+              <span class="m-val">{{ stats()?.stats?.totalComics || comics().length }}</span>
+              <span class="m-label">Total Comics & E-Books</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <span class="m-icon">📑</span>
+            <div class="m-info">
+              <span class="m-val">{{ stats()?.stats?.totalIssues || 5 }}</span>
+              <span class="m-label">Total Issues & Chapters</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <span class="m-icon">👥</span>
+            <div class="m-info">
+              <span class="m-val">{{ stats()?.stats?.totalUsers || 2 }}</span>
+              <span class="m-label">Registered Members</span>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <span class="m-icon">⚡</span>
+            <div class="m-info">
+              <span class="m-val">{{ stats()?.stats?.activeReaders || 2 }}</span>
+              <span class="m-label">Active Readers Synced</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity & Universes Breakdown -->
+        <div class="dash-columns">
+          <div class="col-box">
+            <h3>Universes Distribution</h3>
+            <div class="universe-list">
+              @for (u of stats()?.universes || []; track u.id) {
+                <div class="u-row">
+                  <span class="u-name">{{ u.name }}</span>
+                  <span class="u-count">{{ u.comicCount }} Comics</span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="col-box">
+            <h3>Recent Reading Sessions</h3>
+            <div class="activity-list">
+              @for (act of stats()?.recentActivities || []; track act.progressId) {
+                <div class="act-row">
+                  <div class="act-title">{{ act.comic?.title }}</div>
+                  <div class="act-meta">
+                    <span>Page {{ act.lastPageNumber }}</span>
+                    <span class="badge-pct">{{ act.progressPercent }}%</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 2: MANAGE COMICS TABLE -->
+    @if (activeTab() === 'comics') {
+      <div class="comics-management-section">
+        <div class="table-card">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Cover</th>
+                <th>Title</th>
+                <th>Universe</th>
+                <th>Type</th>
+                <th>Issues</th>
+                <th>Views</th>
+                <th>Rating</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of comics(); track c.comicId) {
+                <tr>
+                  <td>
+                    <img [src]="c.coverImage" [alt]="c.title" class="table-thumb" />
+                  </td>
+                  <td>
+                    <strong>{{ c.title }}</strong>
+                    <div class="sub-creator">{{ c.creator }}</div>
+                  </td>
+                  <td>
+                    <span class="badge-uni" [class.dc-u]="c.universe?.slug === 'dc'" [class.marvel-u]="c.universe?.slug === 'marvel'">
+                      {{ c.universe?.name || 'COMIC' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="type-tag">{{ c.type }}</span>
+                  </td>
+                  <td>
+                    {{ c.issues?.length || 0 }} Issues
+                  </td>
+                  <td>{{ c.viewsCount }}</td>
+                  <td>★ {{ c.rating }}</td>
+                  <td>
+                    <div class="action-btn-group">
+                      <a [routerLink]="['/comic', c.slug]" class="btn-table-view">View</a>
+                      <button (click)="deleteComic(c.comicId)" class="btn-table-del">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 3: ADD NEW COMIC / E-BOOK FORM -->
+    @if (activeTab() === 'add-comic') {
+      <div class="add-comic-section">
+        <div class="form-card">
+          <h2>Add New Comic or E-Book Title</h2>
+          <p class="form-sub">Enter comic metadata, cover image, and choose universe.</p>
+
+          <form (ngSubmit)="onSubmitComic()" class="comic-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Comic Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Wonder Woman: Bloodlines"
+                  [(ngModel)]="newComic.title"
+                  name="title"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Universe / Publisher *</label>
+                <select [(ngModel)]="newComic.universeId" name="universeId">
+                  <option [ngValue]="1">DC Comics</option>
+                  <option [ngValue]="2">Marvel Comics</option>
+                  <option [ngValue]="3">Dark Horse & Indie</option>
+                  <option [ngValue]="4">E-Books & Sci-Fi</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Creator / Authors</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Brian Michael Bendis"
+                  [(ngModel)]="newComic.creator"
+                  name="creator"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Release Year</label>
+                <input
+                  type="number"
+                  [(ngModel)]="newComic.releaseYear"
+                  name="releaseYear"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Cover Image URL *</label>
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/..."
+                  [(ngModel)]="newComic.coverImage"
+                  name="coverImage"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Type</label>
+                <select [(ngModel)]="newComic.type" name="type">
+                  <option value="COMIC">COMIC (Multi-Page Graphic Novel)</option>
+                  <option value="EBOOK">EBOOK (Digital Text / Illustrated)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea
+                rows="4"
+                placeholder="Story synopsis, character intro..."
+                [(ngModel)]="newComic.description"
+                name="description"
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-submit">
+                💾 Save & Publish Comic
+              </button>
+              <button type="button" (click)="setTab('comics')" class="btn-cancel">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+  </div>
+</div>

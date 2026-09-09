@@ -1,0 +1,116 @@
+<div class="library-page">
+  <div class="library-container">
+    <!-- Header -->
+    <div class="library-header">
+      <div class="header-titles">
+        <span class="badge-vault">MY COMIC VAULT</span>
+        <h1>စာကြည့်တိုက်မှတ်တမ်း (My Library)</h1>
+        <p>ဖတ်လက်စ Comic များနှင့် ဖတ်ပြီးသား Recent History များကို စုစည်းဖော်ပြထားသော နေရာဖြစ်ပါသည်။</p>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="vault-tabs">
+        <button
+          class="v-tab-btn"
+          [class.active]="activeTab() === 'progress'"
+          (click)="setTab('progress')"
+        >
+          🔥 In-Progress (ဖတ်လက်စ) ({{ continueList().length }})
+        </button>
+        <button
+          class="v-tab-btn"
+          [class.active]="activeTab() === 'history'"
+          (click)="setTab('history')"
+        >
+          🕒 Recent History (ဖတ်ခဲ့သမျှ) ({{ historyList().length }})
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: IN-PROGRESS / CONTINUE READING -->
+    @if (activeTab() === 'progress') {
+      @if (continueList().length > 0) {
+        <div class="progress-grid">
+          @for (item of continueList(); track item.progressId) {
+            <div class="vault-card">
+              <div class="card-thumb">
+                <img [src]="item.comic.coverImage" [alt]="item.comic.title" />
+                <span class="tag-universe" [class.dc-tag]="item.comic.universe?.slug === 'dc'" [class.marvel-tag]="item.comic.universe?.slug === 'marvel'">
+                  {{ item.comic.universe?.name || 'COMIC' }}
+                </span>
+              </div>
+
+              <div class="card-body">
+                <div class="card-header-meta">
+                  <span class="rating">★ {{ item.comic.rating }}</span>
+                  <span class="status">{{ item.isCompleted ? 'COMPLETED' : 'IN-PROGRESS' }}</span>
+                </div>
+
+                <h3 class="title">{{ item.comic.title }}</h3>
+                <p class="issue-title">📖 {{ item.lastIssue?.title || 'Issue #1' }}</p>
+
+                <!-- Detailed Progress Bar -->
+                <div class="prog-wrapper">
+                  <div class="prog-labels">
+                    <span>Page {{ item.lastPageNumber }} of {{ item.lastIssue?.totalPages || 10 }}</span>
+                    <span class="percent">{{ item.progressPercent }}% Completed</span>
+                  </div>
+                  <div class="prog-track">
+                    <div class="prog-bar" [style.width.%]="item.progressPercent"></div>
+                  </div>
+                </div>
+
+                <div class="card-actions">
+                  <a
+                    [routerLink]="['/reader', item.lastIssueId]"
+                    [queryParams]="{ page: item.lastPageNumber }"
+                    class="btn-resume-primary"
+                  >
+                    ▶ Resume at Page {{ item.lastPageNumber }}
+                  </a>
+                  <a [routerLink]="['/comic', item.comic.slug]" class="btn-details">
+                    Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>လက်ရှိတွင် ဖတ်လက်စ Comic မရှိသေးပါ။</p>
+          <a routerLink="/" class="btn-browse">Comics စတင်ရှာဖွေဖတ်ရှုရန် →</a>
+        </div>
+      }
+    }
+
+    <!-- TAB 2: RECENT READING HISTORY -->
+    @if (activeTab() === 'history') {
+      @if (historyList().length > 0) {
+        <div class="history-list">
+          @for (hist of historyList(); track hist.historyId) {
+            <div class="history-row">
+              <div class="hist-thumb">
+                <img [src]="hist.comic.coverImage" [alt]="hist.comic.title" />
+              </div>
+              <div class="hist-info">
+                <h4>{{ hist.comic.title }}</h4>
+                <p class="hist-issue">Last read: {{ hist.lastIssue?.title || 'Main Series' }}</p>
+                <span class="hist-time">🕒 {{ hist.readAt | date:'medium' }}</span>
+              </div>
+              <div class="hist-action">
+                <a [routerLink]="['/comic', hist.comic.slug]" class="btn-revisit">
+                  Read Again →
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>Recent History မှတ်တမ်း မရှိသေးပါ။</p>
+        </div>
+      }
+    }
+  </div>
+</div>

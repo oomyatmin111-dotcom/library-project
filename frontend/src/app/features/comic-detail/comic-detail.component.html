@@ -1,0 +1,94 @@
+@if (comic(); as c) {
+  <div class="comic-detail-page">
+    <!-- Hero Header with Banner Background -->
+    <div class="detail-hero" [style.background-image]="'linear-gradient(to bottom, rgba(10, 14, 26, 0.4), #080c18), url(' + (c.bannerImage || c.coverImage) + ')'">
+      <div class="detail-container">
+        <a routerLink="/" class="back-link">← Back to Comics Vault</a>
+
+        <div class="hero-main-row">
+          <!-- Poster / Cover Image -->
+          <div class="poster-box">
+            <img [src]="c.coverImage" [alt]="c.title" class="poster-img" />
+            <span class="universe-tag" [class.dc-bg]="c.universe?.slug === 'dc'" [class.marvel-bg]="c.universe?.slug === 'marvel'">
+              {{ c.universe?.name || 'COMIC' }}
+            </span>
+          </div>
+
+          <!-- Metadata & Reading Summary -->
+          <div class="meta-box">
+            <div class="tag-row">
+              <span class="rating-badge">★ {{ c.rating }}</span>
+              <span class="status-badge">{{ c.status }}</span>
+              <span class="year-badge">{{ c.releaseYear }}</span>
+              <span class="type-badge">{{ c.type }}</span>
+            </div>
+
+            <h1 class="title">{{ c.title }}</h1>
+            <p class="creator">Created by <strong>{{ c.creator || 'Master Illustrators' }}</strong></p>
+
+            <p class="description">{{ c.description }}</p>
+
+            <!-- User In-Progress Reading Callout if available -->
+            @if (userProgress(); as prog) {
+              <div class="progress-callout">
+                <div class="prog-label">
+                  <span>📊 In-Progress Reading</span>
+                  <strong>{{ prog.progressPercent }}% (Page {{ prog.lastPageNumber }} of {{ prog.lastIssue?.totalPages || 10 }})</strong>
+                </div>
+                <div class="prog-bar-track">
+                  <div class="prog-bar-fill" [style.width.%]="prog.progressPercent"></div>
+                </div>
+                <a
+                  [routerLink]="['/reader', prog.lastIssueId]"
+                  [queryParams]="{ page: prog.lastPageNumber }"
+                  class="btn-resume-reading"
+                >
+                  ▶ Resume Reading Issue #{{ prog.lastIssue?.issueNumber || 1 }} (Page {{ prog.lastPageNumber }})
+                </a>
+              </div>
+            } @else if (c.issues && c.issues.length > 0) {
+              <a [routerLink]="['/reader', c.issues[0].issueId]" class="btn-start-reading">
+                ⚡ Start Reading Issue #1
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Issues / Chapters Section -->
+    <div class="issues-section">
+      <div class="detail-container">
+        <div class="issues-header">
+          <h2>Available Issues & Chapters ({{ c.issues?.length || 0 }})</h2>
+          <span class="hd-badge">HD Digital Reader Available</span>
+        </div>
+
+        <div class="issues-grid">
+          @for (issue of c.issues || []; track issue.issueId) {
+            <div class="issue-card">
+              <div class="issue-thumb">
+                <img [src]="issue.coverImage || c.coverImage" [alt]="issue.title" />
+                <span class="issue-num">#{{ issue.issueNumber }}</span>
+              </div>
+              <div class="issue-info">
+                <h4>{{ issue.title }}</h4>
+                <div class="issue-meta">
+                  <span>📄 {{ issue.totalPages }} Pages</span>
+                  <span>🗓️ {{ issue.releaseDate || 'Digital Edition' }}</span>
+                </div>
+                <a [routerLink]="['/reader', issue.issueId]" class="btn-read-issue">
+                  Read Issue →
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div class="loading-state">
+    <p>Loading Comic Details...</p>
+  </div>
+}
