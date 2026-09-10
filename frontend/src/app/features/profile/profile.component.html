@@ -1,0 +1,340 @@
+<div class="profile-page">
+  <div class="profile-container">
+    <!-- Hero Header / Member Pass Card -->
+    <div class="member-card-hero">
+      <div class="card-chip">
+        <span class="chip-icon">⚡</span>
+        <span class="platform-name">HERO ARCHIVES DIGITAL PASS</span>
+      </div>
+
+      <div class="card-body">
+        <div class="avatar-col">
+          <div class="avatar-badge">
+            <span class="avatar-emoji">{{ profile()?.roleName === 'ADMIN' ? '🛡️' : (profile()?.roleName === 'LIBRARIAN' ? '📖' : '🦇') }}</span>
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="role-badge" [attr.data-role]="profile()?.roleName">
+            {{ profile()?.roleName }}
+          </div>
+          <h1 class="user-fullname">{{ profile()?.name || 'Member' }}</h1>
+          <p class="user-email">✉️ {{ profile()?.email }}</p>
+          <div class="meta-row">
+            <span class="meta-pill">🪪 ID: <strong>{{ profile()?.membershipNo }}</strong></span>
+            <span class="meta-pill" *ngIf="profile()?.phone">📞 {{ profile()?.phone }}</span>
+            <span class="meta-pill status-active">● Active Status</span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="logout-btn" (click)="logout()">Sign Out 🚪</button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Counters -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-num">{{ profile()?.stats?.activeLoansCount ?? 0 }}</span>
+          <span class="stat-label">Active Book Loans</span>
+        </div>
+        <div class="stat-box" [class.danger]="(profile()?.stats?.unpaidFinesTotal ?? 0) > 0">
+          <span class="stat-num">{{ profile()?.stats?.unpaidFinesTotal ? ('$' + profile()?.stats?.unpaidFinesTotal) : '$0.00' }}</span>
+          <span class="stat-label">Unpaid Fines</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">{{ profile()?.stats?.inProgressCount ?? continueList().length }}</span>
+          <span class="stat-label">Comics In Progress</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">{{ favorites().length }}</span>
+          <span class="stat-label">Bookmarked Comics</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="profile-tabs">
+      <button
+        class="tab-link"
+        [class.active]="activeTab() === 'reading'"
+        (click)="setTab('reading')"
+      >
+        📖 Continue Reading & History
+      </button>
+      <button
+        class="tab-link"
+        [class.active]="activeTab() === 'loans'"
+        (click)="setTab('loans')"
+      >
+        📚 Physical Book Loans ({{ borrowings().length }})
+      </button>
+      <button
+        class="tab-link"
+        [class.active]="activeTab() === 'favorites'"
+        (click)="setTab('favorites')"
+      >
+        ⭐ Bookmarks ({{ favorites().length }})
+      </button>
+      <button
+        class="tab-link"
+        [class.active]="activeTab() === 'settings'"
+        (click)="setTab('settings')"
+      >
+        ⚙️ Settings & Password
+      </button>
+    </div>
+
+    <!-- Tab Content 1: Reading & History -->
+    <div *ngIf="activeTab() === 'reading'" class="tab-panel">
+      <!-- Continue Reading Section -->
+      <section class="panel-section">
+        <h2 class="section-title">⚡ Continue Reading</h2>
+        <div *ngIf="continueList().length === 0" class="empty-state">
+          <span class="empty-icon">📖</span>
+          <p>No active reading sessions. Dive into a comic from the library!</p>
+          <a routerLink="/" class="browse-btn">Explore Comics</a>
+        </div>
+
+        <div *ngIf="continueList().length > 0" class="continue-grid">
+          <div *ngFor="let item of continueList()" class="continue-card">
+            <img [src]="item.comic?.coverImage" [alt]="item.comic?.title" class="cover-thumb" />
+            <div class="card-details">
+              <span class="universe-badge">{{ item.comic?.universe?.name || 'Comics' }}</span>
+              <h3 class="comic-title">{{ item.comic?.title }}</h3>
+              <p class="issue-text">{{ item.lastIssue?.title || ('Issue #' + item.lastIssueId) }}</p>
+
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="item.progressPercent"></div>
+                </div>
+                <span class="progress-label">Page {{ item.lastPageNumber }} ({{ item.progressPercent }}%)</span>
+              </div>
+
+              <a [routerLink]="['/reader', item.lastIssueId]" [queryParams]="{ page: item.lastPageNumber }" class="resume-btn">
+                Resume Reading ▶
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reading History Section -->
+      <section class="panel-section history-section">
+        <h2 class="section-title">🕒 Recent Reading History</h2>
+        <div *ngIf="historyList().length === 0" class="empty-state-compact">
+          No past reading history recorded yet.
+        </div>
+
+        <div *ngIf="historyList().length > 0" class="history-list">
+          <div *ngFor="let hist of historyList()" class="history-row">
+            <img [src]="hist.comic?.coverImage" class="history-thumb" />
+            <div class="history-info">
+              <a [routerLink]="['/comic', hist.comic?.slug]" class="history-title">{{ hist.comic?.title }}</a>
+              <span class="history-issue">{{ hist.lastIssue?.title || 'Last viewed chapter' }}</span>
+            </div>
+            <div class="history-date">
+              {{ hist.readAt | date:'mediumDate' }}
+            </div>
+            <a [routerLink]="['/reader', hist.lastIssueId]" class="history-action">
+              Read Again
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab Content 2: Physical Loans -->
+    <div *ngIf="activeTab() === 'loans'" class="tab-panel">
+      <section class="panel-section">
+        <div class="section-header">
+          <h2 class="section-title">📚 Active Physical Book Loans</h2>
+          <span class="loan-limit-badge">Max Loan Limit: 5 Books</span>
+        </div>
+
+        <div *ngIf="borrowings().length === 0" class="empty-state">
+          <span class="empty-icon">🔖</span>
+          <p>You have no active physical book loans from the circulation desk.</p>
+        </div>
+
+        <div *ngIf="borrowings().length > 0" class="loans-table-wrapper">
+          <table class="loans-table">
+            <thead>
+              <tr>
+                <th>Book Title</th>
+                <th>Barcode</th>
+                <th>Shelf</th>
+                <th>Borrow Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Fine</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let loan of borrowings()" [class.overdue-row]="loan.isOverdue">
+                <td class="book-cell">
+                  <div class="book-info">
+                    <span class="book-name">{{ loan.bookTitle }}</span>
+                  </div>
+                </td>
+                <td><code>{{ loan.barcode }}</code></td>
+                <td>{{ loan.shelfLocation }}</td>
+                <td>{{ loan.borrowDate | date:'mediumDate' }}</td>
+                <td>
+                  <div class="due-cell">
+                    <span>{{ loan.dueDate | date:'mediumDate' }}</span>
+                    <span class="countdown-badge" [class.danger]="loan.isOverdue">
+                      {{ loan.isOverdue ? ('Overdue by ' + (-loan.daysRemaining) + ' days') : (loan.daysRemaining + ' days left') }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="loan-status-pill" [attr.data-status]="loan.status">
+                    {{ loan.status }}
+                  </span>
+                </td>
+                <td>
+                  <span *ngIf="loan.fine" class="fine-badge" [class.unpaid]="loan.fine.paymentStatus === 'UNPAID'">
+                    ${{ loan.fine.amount }} ({{ loan.fine.paymentStatus }})
+                  </span>
+                  <span *ngIf="!loan.fine" class="no-fine">None</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab Content 3: Bookmarks / Favorites -->
+    <div *ngIf="activeTab() === 'favorites'" class="tab-panel">
+      <section class="panel-section">
+        <h2 class="section-title">⭐ Bookmarked Comics & Series</h2>
+
+        <div *ngIf="favorites().length === 0" class="empty-state">
+          <span class="empty-icon">🌟</span>
+          <p>You haven't bookmarked any comics yet. Browse the catalog and tap the heart icon to save favorites!</p>
+          <a routerLink="/" class="browse-btn">Explore Catalog</a>
+        </div>
+
+        <div *ngIf="favorites().length > 0" class="favorites-grid">
+          <div *ngFor="let fav of favorites()" class="fav-card">
+            <div class="fav-cover-wrap">
+              <img [src]="fav.comic.coverImage" [alt]="fav.comic.title" class="fav-cover" />
+              <button class="remove-fav-btn" (click)="removeFavorite(fav.comic.comicId)" title="Remove Bookmark">
+                ✕
+              </button>
+            </div>
+            <div class="fav-info">
+              <span class="fav-universe">{{ fav.comic.universe?.name || 'Comics' }}</span>
+              <h3 class="fav-title">{{ fav.comic.title }}</h3>
+              <p class="fav-creator">{{ fav.comic.creator }}</p>
+              <div class="fav-bottom">
+                <span class="rating-tag">⭐ {{ fav.comic.rating }}</span>
+                <a [routerLink]="['/comic', fav.comic.slug]" class="view-comic-btn">Details →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tab Content 4: Settings & Security -->
+    <div *ngIf="activeTab() === 'settings'" class="tab-panel">
+      <div class="settings-layout">
+        <!-- Edit Profile Form -->
+        <div class="settings-card">
+          <h3>👤 Personal Information</h3>
+          <p class="settings-sub">Update your public name and contact details</p>
+
+          <div *ngIf="profileSuccess()" class="alert-banner success">
+            ✓ {{ profileSuccess() }}
+          </div>
+          <div *ngIf="profileError()" class="alert-banner error">
+            ⚠️ {{ profileError() }}
+          </div>
+
+          <form (ngSubmit)="onSaveProfile()" class="settings-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>First Name</label>
+                <input type="text" [(ngModel)]="editFirstName" name="firstName" required />
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" [(ngModel)]="editLastName" name="lastName" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" [(ngModel)]="editPhone" name="phone" placeholder="09xxxxxxx" />
+            </div>
+
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" [value]="profile()?.email" disabled class="input-disabled" />
+              <small class="field-hint">Email address cannot be changed directly.</small>
+            </div>
+
+            <button type="submit" class="action-btn" [disabled]="savingProfile()">
+              {{ savingProfile() ? 'Saving Changes...' : 'Save Profile Details' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- Change Password Form -->
+        <div class="settings-card">
+          <h3>🔒 Password & Security</h3>
+          <p class="settings-sub">Update your account password with bcrypt protection</p>
+
+          <div *ngIf="passwordSuccess()" class="alert-banner success">
+            ✓ {{ passwordSuccess() }}
+          </div>
+          <div *ngIf="passwordError()" class="alert-banner error">
+            ⚠️ {{ passwordError() }}
+          </div>
+
+          <form (ngSubmit)="onChangePassword()" class="settings-form">
+            <div class="form-group">
+              <label>Current Password</label>
+              <input
+                type="password"
+                [(ngModel)]="currentPassword"
+                name="currentPassword"
+                placeholder="Current password"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>New Password</label>
+              <input
+                type="password"
+                [(ngModel)]="newPassword"
+                name="newPassword"
+                placeholder="At least 6 characters"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                [(ngModel)]="confirmPassword"
+                name="confirmPassword"
+                placeholder="Re-enter new password"
+                required
+              />
+            </div>
+
+            <button type="submit" class="action-btn warning" [disabled]="changingPassword()">
+              {{ changingPassword() ? 'Updating Password...' : 'Update Password' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

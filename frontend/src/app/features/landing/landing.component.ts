@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ComicService } from '../../core/services/comic.service';
 import { ProgressService } from '../../core/services/progress.service';
@@ -8,7 +9,7 @@ import { Comic, ReadingProgress, Universe } from '../../core/models/comic.model'
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.css'],
 })
@@ -25,6 +26,11 @@ export class LandingComponent implements OnInit {
   activeUniverse = signal<string>('all');
   activeFilter = signal<'all' | 'popular' | 'trending' | 'ebook'>('all');
   heroUniverse = signal<'dc' | 'marvel'>('dc');
+
+  // Phase 5 Search & Faceted Filtering
+  searchQuery = signal<string>('');
+  sortBy = signal<'views' | 'newest' | 'title'>('views');
+  statusFilter = signal<string>('ALL');
 
   ngOnInit() {
     this.route.queryParams.subscribe((params) => {
@@ -76,10 +82,37 @@ export class LandingComponent implements OnInit {
       filter.type = 'EBOOK';
     }
 
+    if (this.searchQuery().trim()) {
+      filter.search = this.searchQuery().trim();
+    }
+
+    if (this.statusFilter() !== 'ALL') {
+      filter.status = this.statusFilter();
+    }
+
+    if (this.sortBy() !== 'views') {
+      filter.sort = this.sortBy();
+    }
+
     this.comicService.getComics(filter).subscribe({
       next: (data) => this.comics.set(data),
       error: (err) => console.error('Error loading comics', err),
     });
+  }
+
+  onSearchInput(val: string) {
+    this.searchQuery.set(val);
+    this.loadComics();
+  }
+
+  onSortChange(val: any) {
+    this.sortBy.set(val);
+    this.loadComics();
+  }
+
+  onStatusChange(val: any) {
+    this.statusFilter.set(val);
+    this.loadComics();
   }
 
   setUniverse(slug: string) {

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProgressService } from '../../core/services/progress.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
 
 @Component({
@@ -13,6 +14,7 @@ import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
 })
 export class LibraryComponent implements OnInit {
   private progressService = inject(ProgressService);
+  authService = inject(AuthService);
 
   continueList = signal<ReadingProgress[]>([]);
   historyList = signal<ReadingHistory[]>([]);
@@ -25,7 +27,9 @@ export class LibraryComponent implements OnInit {
 
   loadData() {
     this.loading.set(true);
-    this.progressService.getContinueReading(2).subscribe({
+    const userId = this.authService.currentUser()?.userId || 2;
+
+    this.progressService.getContinueReading(userId).subscribe({
       next: (data) => {
         this.continueList.set(data);
         this.loading.set(false);
@@ -33,7 +37,7 @@ export class LibraryComponent implements OnInit {
       error: () => this.loading.set(false),
     });
 
-    this.progressService.getRecentHistory(2).subscribe({
+    this.progressService.getRecentHistory(userId).subscribe({
       next: (history) => {
         this.historyList.set(history);
       },

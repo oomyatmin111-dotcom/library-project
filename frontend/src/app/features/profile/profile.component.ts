@@ -1,0 +1,176 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
+import { ProgressService } from '../../core/services/progress.service';
+import { UserProfile, BorrowingItem, UserFavoriteItem } from '../../core/models/user.model';
+import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
+
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink],
+  templateUrl: './profile.component.html',
+  styleUrls: ['./profile.component.css'],
+})
+export class ProfileComponent implements OnInit {
+  authService = inject(AuthService);
+  private userProfileService = inject(UserProfileService);
+  private progressService = inject(ProgressService);
+  private router = inject(Router);
+
+  activeTab = signal<'reading' | 'loans' | 'favorites' | 'settings'>('reading');
+  loading = signal<boolean>(true);
+
+  profile = signal<UserProfile | null>(null);
+  borrowings = signal<BorrowingItem[]>([]);
+  favorites = signal<UserFavoriteItem[]>([]);
+  continueList = signal<ReadingProgress[]>([]);
+  historyList = signal<ReadingHistory[]>([]);
+
+  // Profile Edit
+  editFirstName = signal<string>('');
+  editLastName = signal<string>('');
+  editPhone = signal<string>('');
+  savingProfile = signal<boolean>(false);
+  profileSuccess = signal<string>('');
+  profileError = signal<string>('');
+
+  // Password Change
+  currentPassword = signal<string>('');
+  newPassword = signal<string>('');
+  confirmPassword = signal<string>('');
+  changingPassword = signal<boolean>(false);
+  passwordSuccess = signal<string>('');
+  passwordError = signal<string>('');
+
+  ngOnInit() {
+    this.loadData();
+  }
+
+  loadData() {
+    this.loading.set(true);
+
+    this.userProfileService.getProfile().subscribe({
+      next: (prof) => {
+        this.profile.set(prof);
+        this.editFirstName.set(prof.firstName || '');
+        this.editLastName.set(prof.lastName || '');
+        this.editPhone.set(prof.phone || '');
+        this.loading.set(false);
+
+        // Load reading progress with user's ID
+        this.progressService.getContinueReading(prof.userId).subscribe({
+          next: (res) => this.continueList.set(res),
+        });
+
+        this.progressService.getRecentHistory(prof.userId).subscribe({
+          next: (res) => this.historyList.set(res),
+        });
+      },
+      error: () => {
+        this.loading.set(false);
+      },
+    });
+
+    this.userProfileService.getBorrowings().subscribe({
+      next: (loans) => this.borrowings.set(loans),
+    });
+
+    this.userProfileService.getFavorites().subscribe({
+      next: (favs) => this.favorites.set(favs),
+    });
+  }
+
+  setTab(tab: 'reading' | 'loans' | 'favorites' | 'settings') {
+    this.activeTab.set(tab);
+  }
+
+  onSaveProfile() {
+    this.profileSuccess.set('');
+    this.profileError.set('');
+    this.savingProfile.set(true);
+
+    this.userProfileService
+      .updateProfile({
+        firstName: this.editFirstName(),
+        lastName: this.editLastName(),
+        phone: this.editPhone() || undefined,
+      })
+      .subscribe({
+        next: (updated) => {
+          this.profile.set(updated);
+          this.authService.updateCurrentUser({
+            name: `${updated.firstName} ${updated.lastName}`,
+            phone: updated.phone,
+          });
+          this.savingProfile.set(false);
+          this.profileSuccess.set('Profile successfully updated!');
+        },
+        error: (err) => {
+          this.savingProfile.set(false);
+          this.profileError.set(err.error?.message || 'Failed to update profile.');
+        },
+      });
+  }
+
+  onChangePassword() {
+    this.passwordSuccess.set('');
+    this.passwordError.set('');
+
+    if (!this.currentPassword() || !this.newPassword()) {
+      this.passwordError.set('Please fill out all password fields.');
+      return;
+    }
+
+    if (this.newPassword() !== this.confirmPassword()) {
+      this.passwordError.set('New passwords do not match.');
+      return;
+    }
+
+    this.changingPassword.set(true);
+    this.userProfileService
+      .changePassword({
+        currentPassword: this.currentPassword(),
+        newPassword: this.newPassword(),
+      })
+      .subscribe({
+        next: () => {
+          this.changingPassword.set(false);
+          this.passwordSuccess.set('Password changed successfully!');
+          this.currentPassword.set('');
+          this.newPassword.set('');
+          this.confirmPassword.set('');
+        },
+        error: (err) => {
+          this.changingPassword.set(false);
+          this.passwordError.set(err.error?.message || 'Password update failed.');
+        },
+      });
+  }
+
+  removeFavorite(comicId: number) {
+    this.userProfileService.removeFavorite(comicId).subscribe({
+      next: () => {
+        this.favorites.set(this.favorites().filter((f) => f.comic.comicId !== comicId));
+        if (this.profile()) {
+          const current = this.profile()!;
+          this.profile.set({
+            ...current,
+            stats: {
+              ...current.stats,
+              favoritesCount: Math.max(0, current.stats.favoritesCount - 1),
+            },
+          });
+        }
+      },
+    });
+  }
+
+  logout() {
+    this.authService.logout();
+    this.router.navigate(['/']);
+  }
+}

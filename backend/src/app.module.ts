@@ -8,12 +8,22 @@ import { IssuePage } from './entities/issue-page.entity.js';
 import { ReadingProgress } from './entities/reading-progress.entity.js';
 import { ReadingHistory } from './entities/reading-history.entity.js';
 import { Category } from './entities/category.entity.js';
+import { Borrowing } from './entities/borrowing.entity.js';
+import { Fine } from './entities/fine.entity.js';
+import { UserFavorite } from './entities/user-favorite.entity.js';
+import { Book } from './entities/book.entity.js';
+import { BookCopy } from './entities/book-copy.entity.js';
+import { Reservation } from './entities/reservation.entity.js';
+import { Review } from './entities/review.entity.js';
 
 import { AuthModule } from './auth/auth.module.js';
 import { ComicsModule } from './comics/comics.module.js';
 import { IssuesModule } from './issues/issues.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { UsersModule } from './users/users.module.js';
+import { CirculationModule } from './circulation/circulation.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 
 @Module({
   imports: [
@@ -33,15 +43,25 @@ import { AdminModule } from './admin/admin.module.js';
         ReadingProgress,
         ReadingHistory,
         Category,
+        Borrowing,
+        Fine,
+        UserFavorite,
+        Book,
+        BookCopy,
+        Reservation,
+        Review,
       ],
-      synchronize: false, // Schema already prepared
+      synchronize: false,
       logging: false,
     }),
     AuthModule,
+    UsersModule,
     ComicsModule,
     IssuesModule,
     ProgressModule,
     AdminModule,
+    CirculationModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}

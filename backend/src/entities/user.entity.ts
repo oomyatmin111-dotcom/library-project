@@ -23,11 +23,17 @@ export class User {
   @Column({ name: 'password_hash' })
   passwordHash: string;
 
-  @Column({ nullable: true })
-  phone: string;
+  @Column({ name: 'refresh_token_hash', nullable: true, type: 'varchar' })
+  refreshTokenHash: string | null;
+
+  @Column({ nullable: true, type: 'varchar' })
+  phone: string | null;
 
   @Column({ type: 'enum', enum: ['ACTIVE', 'SUSPENDED', 'EXPIRED'], default: 'ACTIVE' })
   status: string;
+
+  @Column({ name: 'max_borrow_limit', default: 5 })
+  maxBorrowLimit: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

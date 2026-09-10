@@ -29,4 +29,15 @@ export class AdminService {
   addPages(issueId: number, imageUrls: string[]): Observable<any> {
     return this.http.post(`${this.apiUrl}/issues/${issueId}/pages`, { imageUrls });
   }
+
+  createIssueBulk(data: {
+    comicId: number;
+    issueNumber: number;
+    title: string;
+    releaseDate?: string;
+    coverImage?: string;
+    imageUrls: string[];
+  }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/issues/bulk`, data);
+  }
 }

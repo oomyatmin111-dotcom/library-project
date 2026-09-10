@@ -21,8 +21,10 @@ export class ComicsController {
     @Query('popular') popular?: string,
     @Query('trending') trending?: string,
     @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('sort') sort?: string,
   ) {
-    return this.comicsService.findAll({ universe, type, popular, trending, search });
+    return this.comicsService.findAll({ universe, type, popular, trending, search, status, sort } as any);
   }
 
   @Get('featured')
@@ -33,6 +35,11 @@ export class ComicsController {
   @Get('universes')
   async getUniverses() {
     return this.comicsService.getUniverses();
+  }
+
+  @Get(':idOrSlug/recommendations')
+  async getRecommendations(@Param('idOrSlug') idOrSlug: string) {
+    return this.comicsService.getRecommendations(idOrSlug);
   }
 
   @Get(':idOrSlug')

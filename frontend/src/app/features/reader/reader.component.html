@@ -1,10 +1,14 @@
-<div class="reader-viewport">
+<div
+  class="reader-viewport"
+  [attr.data-theme]="readerTheme()"
+  [class.rtl-mode]="direction() === 'rtl'"
+>
   @if (issue(); as iss) {
-    <!-- Top Reader Bar -->
-    <div class="reader-top-bar" [class.hidden]="!showControls()">
+    <!-- TOP READER NAVIGATION BAR -->
+    <header class="reader-top-bar" [class.hidden]="!showControls()">
       <div class="top-left">
-        <a [routerLink]="['/comic', iss.comic?.slug || iss.comicId]" class="btn-exit">
-          ✕ Exit Reader
+        <a [routerLink]="['/comic', iss.comic?.slug || iss.comicId]" class="btn-exit" title="Back to Series">
+          ✕ Exit
         </a>
         <div class="comic-info-pill">
           <span class="comic-name">{{ iss.comic?.title }}</span>
@@ -12,15 +16,15 @@
         </div>
       </div>
 
-      <!-- Live Sync Status -->
+      <!-- Live Sync Indicator -->
       <div class="sync-status-badge">
         <span class="sync-dot"></span>
         <span>Auto-Synced: <strong>{{ syncedPercent() }}%</strong> (Page {{ currentPage() }}/{{ totalPages }})</span>
       </div>
 
-      <!-- Controls Right -->
+      <!-- Top Right Actions -->
       <div class="top-right">
-        <!-- Mode Switcher -->
+        <!-- Reading Modes -->
         <div class="mode-switch">
           <button
             class="mode-btn"
@@ -28,17 +32,35 @@
             (click)="setMode('single')"
             title="Single Page Mode"
           >
-            📄 Flip Mode
+            📄 Single
           </button>
           <button
             class="mode-btn"
-            [class.active]="readingMode() === 'scroll'"
-            (click)="setMode('scroll')"
+            [class.active]="readingMode() === 'double'"
+            (click)="setMode('double')"
+            title="Double Page Spread (Facing Pages)"
+          >
+            📖 Double Spread
+          </button>
+          <button
+            class="mode-btn"
+            [class.active]="readingMode() === 'webtoon'"
+            (click)="setMode('webtoon')"
             title="Webtoon Continuous Scroll"
           >
-            📜 Scroll Mode
+            📜 Webtoon
           </button>
         </div>
+
+        <!-- Direction Toggle -->
+        <button
+          class="direction-btn"
+          [class.active-rtl]="direction() === 'rtl'"
+          (click)="setDirection(direction() === 'ltr' ? 'rtl' : 'ltr')"
+          [title]="direction() === 'rtl' ? 'Right-to-Left (Manga Mode)' : 'Left-to-Right (Western Comic Mode)'"
+        >
+          {{ direction() === 'rtl' ? '🔄 RTL Manga' : '➡️ LTR' }}
+        </button>
 
         <!-- Zoom Controls -->
         <div class="zoom-box">
@@ -46,59 +68,228 @@
           <span (click)="resetZoom()" class="zoom-val" title="Click to Reset">{{ (zoomLevel() * 100) | number:'1.0-0' }}%</span>
           <button (click)="zoomIn()" class="zoom-btn" title="Zoom In">+</button>
         </div>
+
+        <!-- Fullscreen Button -->
+        <button (click)="toggleFullscreen()" class="tool-btn" title="Toggle Fullscreen (F)">
+          ⛶
+        </button>
+
+        <!-- Settings Cog -->
+        <button (click)="toggleSettings()" class="tool-btn" [class.active]="isSettingsOpen()" title="Reader Settings & Tone">
+          ⚙️
+        </button>
       </div>
-    </div>
+    </header>
+
+    <!-- SETTINGS POPOVER DRAWER -->
+    @if (isSettingsOpen()) {
+      <div class="settings-popover" (click)="$event.stopPropagation()">
+        <div class="popover-header">
+          <h4>🛠️ Reader Preferences</h4>
+          <button (click)="toggleSettings()" class="popover-close">✕</button>
+        </div>
+
+        <!-- Tone / Theme Selector -->
+        <div class="setting-group">
+          <label>Reading Tone</label>
+          <div class="theme-buttons">
+            <button
+              class="theme-btn dark"
+              [class.selected]="readerTheme() === 'dark'"
+              (click)="setTheme('dark')"
+            >
+              🌙 Dark
+            </button>
+            <button
+              class="theme-btn sepia"
+              [class.selected]="readerTheme() === 'sepia'"
+              (click)="setTheme('sepia')"
+            >
+              📜 Sepia
+            </button>
+            <button
+              class="theme-btn light"
+              [class.selected]="readerTheme() === 'light'"
+              (click)="setTheme('light')"
+            >
+              ☀️ Light
+            </button>
+          </div>
+        </div>
+
+        <!-- Brightness Slider -->
+        <div class="setting-group">
+          <div class="label-row">
+            <label>Luminance & Brightness</label>
+            <span class="val-tag">{{ brightness() }}%</span>
+          </div>
+          <input
+            type="range"
+            min="50"
+            max="130"
+            [value]="brightness()"
+            (input)="updateBrightness(+$any($event.target).value)"
+            class="slider-input"
+          />
+        </div>
+
+        <!-- Reading Flow Direction -->
+        <div class="setting-group">
+          <label>Reading Flow</label>
+          <div class="theme-buttons">
+            <button
+              class="theme-btn"
+              [class.selected]="direction() === 'ltr'"
+              (click)="setDirection('ltr')"
+            >
+              Standard (LTR)
+            </button>
+            <button
+              class="theme-btn"
+              [class.selected]="direction() === 'rtl'"
+              (click)="setDirection('rtl')"
+            >
+              Manga (RTL)
+            </button>
+          </div>
+        </div>
+
+        <div class="shortcuts-tip">
+          <small>💡 <strong>Keyboard Shortcuts:</strong> Space / Right Arrow: Next Page • Left Arrow: Previous • F: Fullscreen</small>
+        </div>
+      </div>
+    }
 
     <!-- MAIN READING CANVAS -->
-    <div class="reader-content">
+    <main
+      class="reader-content"
+      [style.filter]="'brightness(' + brightness() + '%)'"
+      (click)="toggleControls()"
+    >
+      <!-- 1. Single Page Mode -->
       @if (readingMode() === 'single') {
-        <!-- Single Page / Flip Mode -->
         <div class="single-mode-wrapper">
           <button
             class="nav-arrow nav-prev"
             [disabled]="currentPage() <= 1"
-            (click)="prevPage()"
-            title="Previous Page (Left Arrow)"
+            (click)="$event.stopPropagation(); prevPage()"
+            title="Previous Page"
           >
             ‹
           </button>
 
-          <div class="page-canvas" [style.transform]="'scale(' + zoomLevel() + ')'">
+          <div
+            class="page-canvas single-canvas"
+            [style.transform]="'scale(' + zoomLevel() + ')'"
+            (click)="$event.stopPropagation(); nextPage()"
+          >
             <img
               [src]="currentImage"
               [alt]="'Page ' + currentPage()"
               class="comic-page-image"
-              (click)="nextPage()"
             />
           </div>
 
           <button
             class="nav-arrow nav-next"
             [disabled]="currentPage() >= totalPages"
-            (click)="nextPage()"
-            title="Next Page (Right Arrow / Space)"
+            (click)="$event.stopPropagation(); nextPage()"
+            title="Next Page"
           >
             ›
           </button>
         </div>
-      } @else {
-        <!-- Webtoon Continuous Scroll Mode -->
-        <div class="scroll-mode-wrapper" [style.transform]="'scale(' + zoomLevel() + ')'">
+      }
+
+      <!-- 2. Double-Page Spread Mode (Facing Pages) -->
+      @else if (readingMode() === 'double') {
+        @let spread = getDoublePages();
+        <div class="double-mode-wrapper">
+          <button
+            class="nav-arrow nav-prev"
+            [disabled]="currentPage() <= 1"
+            (click)="$event.stopPropagation(); prevPage()"
+            title="Previous Pages"
+          >
+            ‹
+          </button>
+
+          <div
+            class="spread-canvas"
+            [style.transform]="'scale(' + zoomLevel() + ')'"
+            (click)="$event.stopPropagation(); nextPage()"
+          >
+            <!-- Single Cover Page -->
+            @if (spread.isCover) {
+              <div class="solo-cover-box">
+                <img
+                  [src]="spread.right?.imageUrl || currentImage"
+                  alt="Cover Page"
+                  class="comic-page-image cover-img"
+                />
+                <span class="spread-badge">Cover Page</span>
+              </div>
+            } @else {
+              <!-- Facing Page Pair -->
+              <div class="facing-pair" [class.rtl-pair]="direction() === 'rtl'">
+                <div class="spread-page left-page" *ngIf="spread.left">
+                  <img
+                    [src]="spread.left.imageUrl"
+                    [alt]="'Page ' + spread.left.pageNumber"
+                    class="comic-page-image"
+                  />
+                  <span class="spread-page-number">P. {{ spread.left.pageNumber }}</span>
+                </div>
+                <div class="book-spine-gutter"></div>
+                <div class="spread-page right-page" *ngIf="spread.right">
+                  <img
+                    [src]="spread.right.imageUrl"
+                    [alt]="'Page ' + spread.right.pageNumber"
+                    class="comic-page-image"
+                  />
+                  <span class="spread-page-number">P. {{ spread.right.pageNumber }}</span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <button
+            class="nav-arrow nav-next"
+            [disabled]="currentPage() >= totalPages"
+            (click)="$event.stopPropagation(); nextPage()"
+            title="Next Pages"
+          >
+            ›
+          </button>
+        </div>
+      }
+
+      <!-- 3. Webtoon Continuous Long-Strip Mode -->
+      @else if (readingMode() === 'webtoon') {
+        <div
+          class="webtoon-mode-wrapper"
+          [style.transform]="'scale(' + zoomLevel() + ')'"
+          (click)="$event.stopPropagation()"
+        >
           @for (page of pages(); track page.pageId) {
-            <div class="scroll-page-item" id="page-{{ page.pageNumber }}">
+            <div class="webtoon-page-item" id="page-{{ page.pageNumber }}">
               <img [src]="page.imageUrl" [alt]="'Page ' + page.pageNumber" loading="lazy" />
-              <div class="scroll-page-badge">Page {{ page.pageNumber }}</div>
+              <div class="webtoon-page-badge">Page {{ page.pageNumber }}</div>
             </div>
           }
         </div>
       }
-    </div>
+    </main>
 
-    <!-- Bottom Progress & Page Jumper Slider Bar -->
-    <div class="reader-bottom-bar" [class.hidden]="!showControls()">
+    <!-- BOTTOM PROGRESS & PAGE JUMPER -->
+    <footer class="reader-bottom-bar" [class.hidden]="!showControls()">
       <div class="bottom-container">
-        <button class="slider-btn" [disabled]="currentPage() <= 1" (click)="prevPage()">
-          ◀ Previous
+        <button
+          class="slider-btn"
+          [disabled]="currentPage() <= 1"
+          (click)="prevPage()"
+        >
+          {{ direction() === 'rtl' ? 'Next ▶' : '◀ Previous' }}
         </button>
 
         <div class="slider-track-box">
@@ -114,15 +305,19 @@
           <span class="percent-label">{{ syncedPercent() }}%</span>
         </div>
 
-        <button class="slider-btn" [disabled]="currentPage() >= totalPages" (click)="nextPage()">
-          Next ▶
+        <button
+          class="slider-btn"
+          [disabled]="currentPage() >= totalPages"
+          (click)="nextPage()"
+        >
+          {{ direction() === 'rtl' ? '◀ Previous' : 'Next ▶' }}
         </button>
       </div>
-    </div>
+    </footer>
   } @else {
     <div class="reader-loading">
       <div class="spinner"></div>
-      <p>Loading Comic Panels & High-Res Pages...</p>
+      <p>Loading High-Res Comic Panels & Pages...</p>
     </div>
   }
 </div>

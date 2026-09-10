@@ -7,9 +7,13 @@ import { ReadingProgress } from '../entities/reading-progress.entity.js';
 import { Universe } from '../entities/universe.entity.js';
 import { AdminService } from './admin.service.js';
 import { AdminController } from './admin.controller.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Comic, Issue, User, ReadingProgress, Universe])],
+  imports: [
+    TypeOrmModule.forFeature([Comic, Issue, User, ReadingProgress, Universe]),
+    AuthModule,
+  ],
   providers: [AdminService],
   controllers: [AdminController],
   exports: [AdminService],

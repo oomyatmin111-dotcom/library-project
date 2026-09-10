@@ -47,7 +47,48 @@ export class ComicsService {
       });
     }
 
-    qb.orderBy('comic.views_count', 'DESC');
+    if ((query as any).status) {
+      qb.andWhere('comic.status = :status', { status: (query as any).status });
+    }
+
+    const sort = (query as any).sort;
+    if (sort === 'newest') {
+      qb.orderBy('comic.release_year', 'DESC');
+    } else if (sort === 'title') {
+      qb.orderBy('comic.title', 'ASC');
+    } else {
+      qb.orderBy('comic.views_count', 'DESC');
+    }
+
+    return qb.getMany();
+  }
+
+  async getRecommendations(idOrSlug: string) {
+    let currentComic: Comic | null = null;
+    if (!isNaN(Number(idOrSlug))) {
+      currentComic = await this.comicRepository.findOne({ where: { comicId: Number(idOrSlug) } });
+    } else {
+      currentComic = await this.comicRepository.findOne({ where: { slug: idOrSlug } });
+    }
+
+    const qb = this.comicRepository
+      .createQueryBuilder('comic')
+      .leftJoinAndSelect('comic.universe', 'universe')
+      .leftJoinAndSelect('comic.issues', 'issues');
+
+    if (currentComic) {
+      qb.where('comic.comicId != :cid', { cid: currentComic.comicId });
+      if (currentComic.universeId) {
+        qb.orderBy(`CASE WHEN comic.universe_id = ${currentComic.universeId} THEN 0 ELSE 1 END`, 'ASC');
+        qb.addOrderBy('comic.views_count', 'DESC');
+      } else {
+        qb.orderBy('comic.views_count', 'DESC');
+      }
+    } else {
+      qb.orderBy('comic.views_count', 'DESC');
+    }
+
+    qb.limit(4);
     return qb.getMany();
   }
 

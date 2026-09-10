@@ -203,22 +203,67 @@
           </button>
         </div>
 
-        <!-- Sort Filter (Popular / Trending) -->
-        <div class="sub-filters">
-          <button
-            class="sub-btn"
-            [class.active]="activeFilter() === 'popular'"
-            (click)="setFilter('popular')"
-          >
-            ⭐ Popular Comics
-          </button>
-          <button
-            class="sub-btn"
-            [class.active]="activeFilter() === 'trending'"
-            (click)="setFilter('trending')"
-          >
-            🔥 Trending
-          </button>
+        <!-- Sort & Faceted Search Filter (Phase 5) -->
+        <div class="sub-filters-bar">
+          <div class="search-box-wrap">
+            <span class="search-ico">🔍</span>
+            <input
+              type="text"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="onSearchInput($event)"
+              placeholder="Search by title, creator, character, story..."
+              class="catalog-search-input"
+            />
+            <button *ngIf="searchQuery()" (click)="onSearchInput('')" class="clear-btn">✕</button>
+          </div>
+
+          <div class="faceted-controls">
+            <div class="sub-filters">
+              <button
+                class="sub-btn"
+                [class.active]="activeFilter() === 'all'"
+                (click)="setFilter('all')"
+              >
+                All
+              </button>
+              <button
+                class="sub-btn"
+                [class.active]="activeFilter() === 'popular'"
+                (click)="setFilter('popular')"
+              >
+                ⭐ Popular
+              </button>
+              <button
+                class="sub-btn"
+                [class.active]="activeFilter() === 'trending'"
+                (click)="setFilter('trending')"
+              >
+                🔥 Trending
+              </button>
+            </div>
+
+            <!-- Sort By Select -->
+            <select
+              [ngModel]="sortBy()"
+              (ngModelChange)="onSortChange($event)"
+              class="facet-select"
+            >
+              <option value="views">Most Views</option>
+              <option value="newest">Newest Releases</option>
+              <option value="title">Title (A-Z)</option>
+            </select>
+
+            <!-- Status Filter -->
+            <select
+              [ngModel]="statusFilter()"
+              (ngModelChange)="onStatusChange($event)"
+              class="facet-select"
+            >
+              <option value="ALL">All Status</option>
+              <option value="ONGOING">Ongoing</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
         </div>
       </div>
 

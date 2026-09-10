@@ -53,4 +53,38 @@ export class IssuesService {
     await this.issueRepository.update(issueId, { totalPages: imageUrls.length });
     return saved;
   }
+
+  async createIssueWithPages(data: {
+    comicId: number;
+    issueNumber: number;
+    title: string;
+    releaseDate?: string;
+    coverImage?: string;
+    imageUrls: string[];
+  }) {
+    const urls = (data.imageUrls || []).filter((u) => !!u && u.trim().length > 0);
+    const issue = this.issueRepository.create({
+      comicId: data.comicId,
+      issueNumber: data.issueNumber,
+      title: data.title,
+      releaseDate: data.releaseDate || undefined,
+      coverImage: data.coverImage || (urls.length > 0 ? urls[0] : undefined),
+      totalPages: urls.length,
+    });
+
+    const savedIssue = await this.issueRepository.save(issue);
+
+    if (urls.length > 0) {
+      const pages: IssuePage[] = urls.map((url, idx) =>
+        this.pageRepository.create({
+          issueId: savedIssue.issueId,
+          pageNumber: idx + 1,
+          imageUrl: url.trim(),
+        }),
+      );
+      await this.pageRepository.save(pages);
+    }
+
+    return this.findByIssueId(savedIssue.issueId);
+  }
 }

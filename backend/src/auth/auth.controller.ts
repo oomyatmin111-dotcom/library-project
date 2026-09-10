@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
 
 @Controller('auth')
 export class AuthController {
@@ -15,14 +16,25 @@ export class AuthController {
     return this.authService.login(body);
   }
 
+  @Post('refresh')
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refreshToken(refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  async logout(@Request() req: any) {
+    return this.authService.logout(req.user.userId);
+  }
+
+  @Get('demo-users')
+  async getDemoUsers() {
+    return this.authService.getDemoUsers();
+  }
+
   @Get('demo-user')
   async getDemoUser() {
-    const user = await this.authService.getDemoUser();
-    return {
-      userId: user?.userId ?? 2,
-      email: user?.email ?? 'member@comics.com',
-      name: user ? `${user.firstName} ${user.lastName}` : 'Comic Fan',
-      roleId: user?.roleId ?? 3,
-    };
+    const users = await this.authService.getDemoUsers();
+    return users[0] || null;
   }
 }

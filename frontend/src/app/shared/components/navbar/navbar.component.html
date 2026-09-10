@@ -23,11 +23,14 @@
         <span class="nav-icon">📖</span> E-Books
       </a>
       <a routerLink="/library" routerLinkActive="active-link">
-        <span class="nav-icon">📚</span> My Library
+        <span class="nav-icon">📚</span> Reading Log
+      </a>
+      <a *ngIf="authService.isLoggedIn()" routerLink="/profile" routerLinkActive="active-link">
+        <span class="nav-icon">🪪</span> My Dashboard
       </a>
     </nav>
 
-    <!-- Search & Admin -->
+    <!-- Search & User Auth Actions -->
     <div class="nav-right">
       <div class="search-box">
         <input
@@ -40,18 +43,69 @@
         <button (click)="onSearch()" class="search-btn">🔍</button>
       </div>
 
-      <a routerLink="/admin" class="admin-link" title="Open Admin Panel">
+      <!-- Admin link if privileged -->
+      <a *ngIf="authService.isAdmin() || authService.isLibrarian()" routerLink="/admin" class="admin-link" title="Open Admin Panel">
         ⚙️ Admin
       </a>
 
-      <!-- Profile indicator -->
-      <div class="user-pill">
-        <div class="user-avatar">🦇</div>
-        <div class="user-meta">
-          <span class="user-name">Bruce Wayne</span>
-          <span class="user-role">Member</span>
+      <!-- Logged In User Pill with Dropdown -->
+      <div *ngIf="authService.isLoggedIn()" class="user-menu-wrap">
+        <div class="user-pill" (click)="toggleMenu()">
+          <div class="user-avatar">
+            {{ authService.isAdmin() ? '🛡️' : (authService.isLibrarian() ? '📖' : '🦇') }}
+          </div>
+          <div class="user-meta">
+            <span class="user-name">{{ authService.currentUser()?.name }}</span>
+            <span class="user-role">{{ authService.currentUser()?.roleName }}</span>
+          </div>
+          <span class="menu-caret">▾</span>
         </div>
+
+        <!-- Dropdown Menu -->
+        <div *ngIf="isMenuOpen()" class="user-dropdown">
+          <div class="dropdown-header">
+            <strong>{{ authService.currentUser()?.name }}</strong>
+            <small>{{ authService.currentUser()?.membershipNo }}</small>
+            <span class="dropdown-role">{{ authService.currentUser()?.roleName }}</span>
+          </div>
+
+          <div class="dropdown-items">
+            <a routerLink="/profile" (click)="closeMenu()" class="dropdown-item">
+              🪪 Personal Dashboard & Pass
+            </a>
+            <a routerLink="/library" (click)="closeMenu()" class="dropdown-item">
+              📚 Continue Reading
+            </a>
+            <a *ngIf="authService.isAdmin() || authService.isLibrarian()" routerLink="/admin" (click)="closeMenu()" class="dropdown-item admin-item">
+              ⚙️ Admin Management Console
+            </a>
+          </div>
+
+          <!-- Switch demo accounts -->
+          <div class="demo-switcher">
+            <span class="switcher-label">Switch Demo Account:</span>
+            <div class="switcher-btns">
+              <button (click)="switchDemo('admin@library.com')" class="switch-btn admin" title="Super Admin">🛡️ Admin</button>
+              <button (click)="switchDemo('aungkyaw@library.com')" class="switch-btn librarian" title="Librarian">📖 Librarian</button>
+              <button (click)="switchDemo('hlahla@gmail.com')" class="switch-btn member" title="Member">🦇 Member</button>
+            </div>
+          </div>
+
+          <div class="dropdown-footer">
+            <button (click)="logout()" class="dropdown-logout">Sign Out 🚪</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logged Out Sign In Button -->
+      <div *ngIf="!authService.isLoggedIn()" class="auth-actions">
+        <button class="signin-nav-btn" (click)="authService.openAuthModal('login')">
+          ⚡ Sign In
+        </button>
       </div>
     </div>
   </div>
 </header>
+
+<!-- Auth Modal (Login / Register) -->
+<app-auth-modal *ngIf="authService.isAuthModalOpen()"></app-auth-modal>

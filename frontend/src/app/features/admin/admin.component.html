@@ -29,7 +29,35 @@
           [class.active]="activeTab() === 'add-comic'"
           (click)="setTab('add-comic')"
         >
-          ➕ Add New Comic / E-Book
+          ➕ Add Comic
+        </button>
+        <button
+          class="adm-tab btn-highlight-green"
+          [class.active]="activeTab() === 'bulk-upload'"
+          (click)="setTab('bulk-upload')"
+        >
+          🚀 Ingest Chapter & Pages
+        </button>
+        <button
+          class="adm-tab btn-highlight"
+          [class.active]="activeTab() === 'circulation'"
+          (click)="setTab('circulation')"
+        >
+          🗂️ Circulation Desk
+        </button>
+        <button
+          class="adm-tab"
+          [class.active]="activeTab() === 'fines'"
+          (click)="setTab('fines')"
+        >
+          💰 Fines & Payments
+        </button>
+        <button
+          class="adm-tab"
+          [class.active]="activeTab() === 'reservations'"
+          (click)="setTab('reservations')"
+        >
+          🔖 Reservations
         </button>
       </div>
     </div>
@@ -257,6 +285,471 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 4: BULK CHAPTER & PAGES INGESTION -->
+    @if (activeTab() === 'bulk-upload') {
+      <div class="form-section">
+        <div class="form-card">
+          <div class="uploader-header-row">
+            <div>
+              <h2>🚀 Bulk Chapter & Pages Ingestion (အဆင့်မြင့် စာမျက်နှာများ တင်သွင်းခြင်း)</h2>
+              <p>Comic တစ်ခုချင်းစီအတွက် Chapter အသစ်များနှင့် စာမျက်နှာပုံများကို တစ်ပြိုင်နက် batch upload ပြုလုပ်နိုင်ပါသည်</p>
+            </div>
+            <button type="button" class="btn-demo-fill" (click)="quickFillDemoPages()">
+              ✨ Auto-Fill Demo Pages
+            </button>
+          </div>
+
+          <div *ngIf="uploadedIssueId()" class="success-callout">
+            <span class="success-icon">🎉</span>
+            <div>
+              <strong>Chapter Ingested Successfully!</strong>
+              <p>The chapter has been registered and all page records are live.</p>
+            </div>
+            <a [routerLink]="['/reader', uploadedIssueId()]" class="btn-view-reader">
+              Open In Reader ▶
+            </a>
+          </div>
+
+          <form (ngSubmit)="onBulkUpload()" class="comic-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Select Comic Series *</label>
+                <select [ngModel]="uploadComicId()" (ngModelChange)="uploadComicId.set($event)" name="uploadComicId" required>
+                  <option *ngFor="let c of comics()" [value]="c.comicId">
+                    {{ c.title }} ({{ c.universe?.name || 'Comics' }})
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Issue / Chapter Number *</label>
+                <input
+                  type="number"
+                  [ngModel]="uploadIssueNumber()"
+                  (ngModelChange)="uploadIssueNumber.set($event)"
+                  name="uploadIssueNumber"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Release Date</label>
+                <input
+                  type="date"
+                  [ngModel]="uploadReleaseDate()"
+                  (ngModelChange)="uploadReleaseDate.set($event)"
+                  name="uploadReleaseDate"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Chapter Title *</label>
+              <input
+                type="text"
+                placeholder="e.g. Chapter 3: The Dark Dimension Falls"
+                [ngModel]="uploadIssueTitle()"
+                (ngModelChange)="uploadIssueTitle.set($event)"
+                name="uploadIssueTitle"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <div class="textarea-label-row">
+                <label>Page Image URLs (One URL per line) *</label>
+                <span class="page-count-tag">Detected: <strong>{{ parsedImageUrls().length }}</strong> Pages</span>
+              </div>
+              <textarea
+                rows="6"
+                placeholder="https://images.unsplash.com/photo-1...\nhttps://images.unsplash.com/photo-2..."
+                [ngModel]="rawImageUrls()"
+                (ngModelChange)="rawImageUrls.set($event)"
+                name="rawImageUrls"
+                required
+                class="urls-textarea"
+              ></textarea>
+              <small class="field-hint">Paste full image URLs (JPG, PNG, WebP) in reading sequence.</small>
+            </div>
+
+            <!-- Real-time Thumbnail Preview Grid -->
+            <div *ngIf="parsedImageUrls().length > 0" class="preview-panel">
+              <span class="preview-label">🖼️ Live Sequence Preview:</span>
+              <div class="preview-thumbnails">
+                <div *ngFor="let url of parsedImageUrls(); let i = index" class="thumb-box">
+                  <img [src]="url" [alt]="'Page ' + (i + 1)" />
+                  <span class="thumb-num">P. {{ i + 1 }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-submit" [disabled]="isUploading() || parsedImageUrls().length === 0">
+                {{ isUploading() ? 'Ingesting Chapter & Pages...' : '🚀 Ingest Chapter (' + parsedImageUrls().length + ' Pages)' }}
+              </button>
+              <button type="button" (click)="setTab('comics')" class="btn-cancel">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 5: CIRCULATION DESK (PHASE 4) -->
+    @if (activeTab() === 'circulation') {
+      <div class="circulation-section">
+        <!-- Action Terminals: Check-out & Check-in side-by-side -->
+        <div class="desk-terminals-grid">
+          <!-- Terminal 1: Rapid Check-out -->
+          <div class="terminal-card checkout-card">
+            <div class="terminal-header">
+              <span class="t-icon">📤</span>
+              <div>
+                <h3>Rapid Check-out Terminal</h3>
+                <p>Scan or enter barcode to issue a physical copy to member</p>
+              </div>
+            </div>
+            <form (ngSubmit)="onCheckout()" class="terminal-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Copy Barcode</label>
+                  <input
+                    type="text"
+                    [ngModel]="checkoutBarcode()"
+                    (ngModelChange)="checkoutBarcode.set($event)"
+                    name="checkoutBarcode"
+                    placeholder="e.g. BC-CC-002"
+                    required
+                    class="form-control barcode-input"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Member No / Email</label>
+                  <input
+                    type="text"
+                    [ngModel]="checkoutMember()"
+                    (ngModelChange)="checkoutMember.set($event)"
+                    name="checkoutMember"
+                    placeholder="e.g. MBR-2026-001"
+                    required
+                    class="form-control"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Loan Duration</label>
+                  <select
+                    [ngModel]="checkoutDays()"
+                    (ngModelChange)="checkoutDays.set($event)"
+                    name="checkoutDays"
+                    class="form-control"
+                  >
+                    <option [value]="7">7 Days (Standard Comic)</option>
+                    <option [value]="14">14 Days (Standard Book)</option>
+                    <option [value]="30">30 Days (Extended Research)</option>
+                  </select>
+                </div>
+                <div class="form-group btn-align">
+                  <button type="submit" class="btn-terminal btn-checkout">
+                    ⚡ Issue Loan
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Terminal 2: Rapid Check-in / Return -->
+          <div class="terminal-card checkin-card">
+            <div class="terminal-header">
+              <span class="t-icon">📥</span>
+              <div>
+                <h3>Rapid Return & Check-in</h3>
+                <p>Scan barcode to return copy. Calculates overdue fines automatically.</p>
+              </div>
+            </div>
+            <form (ngSubmit)="onCheckin()" class="terminal-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Return Copy Barcode</label>
+                  <input
+                    type="text"
+                    [ngModel]="checkinBarcode()"
+                    (ngModelChange)="checkinBarcode.set($event)"
+                    name="checkinBarcode"
+                    placeholder="e.g. BC-REF-001"
+                    required
+                    class="form-control barcode-input"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Physical Condition Note</label>
+                  <select
+                    [ngModel]="checkinCondition()"
+                    (ngModelChange)="checkinCondition.set($event)"
+                    name="checkinCondition"
+                    class="form-control"
+                  >
+                    <option value="Good condition">Good condition</option>
+                    <option value="Slightly worn cover">Slightly worn cover</option>
+                    <option value="Minor page fold">Minor page fold</option>
+                    <option value="Damaged - needs repair">Damaged - needs repair</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group btn-align-right">
+                <button type="submit" class="btn-terminal btn-checkin">
+                  📗 Check In & Process Return
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Active Loans Inventory Table -->
+        <div class="card loans-card">
+          <div class="loans-header">
+            <div>
+              <h3>📋 Active & Historic Loans ({{ filteredLoans().length }})</h3>
+              <p>Physical library circulation log with real-time countdown & overdue status</p>
+            </div>
+            <div class="loans-controls">
+              <input
+                type="text"
+                [ngModel]="loanSearch()"
+                (ngModelChange)="loanSearch.set($event)"
+                placeholder="Search barcode, title, member..."
+                class="search-mini"
+              />
+              <div class="filter-pills">
+                <button [class.active]="loanFilter() === 'ALL'" (click)="loanFilter.set('ALL')">All</button>
+                <button [class.active]="loanFilter() === 'BORROWED'" (click)="loanFilter.set('BORROWED')">Borrowed</button>
+                <button [class.active]="loanFilter() === 'OVERDUE'" (click)="loanFilter.set('OVERDUE')">⚠️ Overdue</button>
+                <button [class.active]="loanFilter() === 'RETURNED'" (click)="loanFilter.set('RETURNED')">Returned</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Barcode</th>
+                  <th>Title & Copy</th>
+                  <th>Member</th>
+                  <th>Borrowed</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Fine</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (loan of filteredLoans(); track loan.borrowingId) {
+                  <tr>
+                    <td>
+                      <code class="barcode-pill">{{ loan.bookCopy?.barcode || 'N/A' }}</code>
+                    </td>
+                    <td>
+                      <strong>{{ loan.bookCopy?.book?.title || 'Unknown Title' }}</strong>
+                      <span class="shelf-tag" *ngIf="loan.bookCopy?.book?.shelfLocation">
+                        📍 {{ loan.bookCopy?.book?.shelfLocation }}
+                      </span>
+                    </td>
+                    <td>
+                      <div>{{ loan.user?.firstName }} {{ loan.user?.lastName }}</div>
+                      <small class="text-muted">{{ loan.user?.membershipNo }}</small>
+                    </td>
+                    <td>{{ loan.borrowDate }}</td>
+                    <td>
+                      <span [class.text-danger]="loan.status === 'OVERDUE'">
+                        {{ loan.dueDate }}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        class="status-pill"
+                        [class.status-active]="loan.status === 'BORROWED'"
+                        [class.status-overdue]="loan.status === 'OVERDUE'"
+                        [class.status-returned]="loan.status === 'RETURNED'"
+                      >
+                        {{ loan.status }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (loan.fine) {
+                        <span class="fine-badge" [class.fine-paid]="loan.fine.paymentStatus === 'PAID'">
+                          ${{ loan.fine.amount }} ({{ loan.fine.paymentStatus }})
+                        </span>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                    <td>
+                      @if (loan.status === 'BORROWED' || loan.status === 'OVERDUE') {
+                        <button
+                          class="btn-return-action"
+                          (click)="onCheckin(loan.bookCopy?.barcode)"
+                          title="Quick Check-in"
+                        >
+                          Return
+                        </button>
+                      } @else {
+                        <span class="checked-mark">✓ Closed</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="text-center empty-cell">No circulation records found.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 6: FINES & PENALTIES (PHASE 4) -->
+    @if (activeTab() === 'fines') {
+      <div class="fines-section">
+        <div class="fines-header-banner">
+          <div>
+            <h2>💰 Fines & Penalty Management</h2>
+            <p>Automated overdue penalties ($0.50/day) with payment receipts and librarian waivers.</p>
+          </div>
+          <button class="btn-refresh" (click)="loadCirculationData()">🔄 Refresh Data</button>
+        </div>
+
+        <div class="card fines-card">
+          <div class="table-responsive">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Fine ID</th>
+                  <th>Borrowing ID</th>
+                  <th>Amount</th>
+                  <th>Paid</th>
+                  <th>Payment Status</th>
+                  <th>Payment Date</th>
+                  <th>Reason / Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fine of fines(); track fine.fineId) {
+                  <tr>
+                    <td>#{{ fine.fineId }}</td>
+                    <td>Loan #{{ fine.borrowingId }}</td>
+                    <td><strong>${{ fine.amount }}</strong></td>
+                    <td>${{ fine.paidAmount }}</td>
+                    <td>
+                      <span
+                        class="status-pill"
+                        [class.status-returned]="fine.paymentStatus === 'PAID'"
+                        [class.status-overdue]="fine.paymentStatus === 'UNPAID'"
+                        [class.status-active]="fine.paymentStatus === 'PARTIALLY_PAID'"
+                      >
+                        {{ fine.paymentStatus }}
+                      </span>
+                    </td>
+                    <td>{{ fine.paymentDate ? (fine.paymentDate | date:'short') : 'Pending' }}</td>
+                    <td><small>{{ fine.notes || 'Overdue penalty' }}</small></td>
+                    <td>
+                      @if (fine.paymentStatus === 'UNPAID' || fine.paymentStatus === 'PARTIALLY_PAID') {
+                        <div class="btn-group-sm">
+                          <button class="btn-pay" (click)="onPayFine(fine.fineId)">
+                            💵 Pay Full
+                          </button>
+                          <button class="btn-waive" (click)="onWaiveFine(fine.fineId)">
+                            🛡️ Waive
+                          </button>
+                        </div>
+                      } @else {
+                        <span class="badge-done">{{ fine.paymentStatus }}</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="8" class="text-center empty-cell">No penalty records found. All fines clear! 🎉</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 7: RESERVATIONS WAITLIST (PHASE 4) -->
+    @if (activeTab() === 'reservations') {
+      <div class="reservations-section">
+        <div class="fines-header-banner">
+          <div>
+            <h2>🔖 Book Reservations & Waitlist</h2>
+            <p>When physical titles are checked out, members hold queue reservations. Automatically fulfilled upon return.</p>
+          </div>
+          <button class="btn-refresh" (click)="loadCirculationData()">🔄 Refresh Waitlist</button>
+        </div>
+
+        <div class="card res-card">
+          <div class="table-responsive">
+            <table class="adm-table">
+              <thead>
+                <tr>
+                  <th>Res. ID</th>
+                  <th>Book Title</th>
+                  <th>Reserving Member</th>
+                  <th>Date Reserved</th>
+                  <th>Queue Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (res of reservations(); track res.reservationId) {
+                  <tr>
+                    <td>#{{ res.reservationId }}</td>
+                    <td><strong>{{ res.book?.title || 'Book #' + res.bookId }}</strong></td>
+                    <td>
+                      {{ res.user?.firstName }} {{ res.user?.lastName }}
+                      <small class="text-muted">({{ res.user?.membershipNo }})</small>
+                    </td>
+                    <td>{{ res.reservationDate | date:'mediumDate' }}</td>
+                    <td>
+                      <span
+                        class="status-pill"
+                        [class.status-active]="res.status === 'PENDING'"
+                        [class.status-returned]="res.status === 'FULFILLED'"
+                        [class.status-overdue]="res.status === 'CANCELLED'"
+                      >
+                        {{ res.status }}
+                      </span>
+                    </td>
+                    <td>
+                      @if (res.status === 'PENDING') {
+                        <button class="btn-waive" (click)="onCancelReservation(res.reservationId)">
+                          Cancel
+                        </button>
+                      } @else {
+                        <span class="text-muted">—</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="text-center empty-cell">No active reservations in queue.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     }

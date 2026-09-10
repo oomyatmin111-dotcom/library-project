@@ -38,18 +38,38 @@
                 <div class="prog-bar-track">
                   <div class="prog-bar-fill" [style.width.%]="prog.progressPercent"></div>
                 </div>
-                <a
-                  [routerLink]="['/reader', prog.lastIssueId]"
-                  [queryParams]="{ page: prog.lastPageNumber }"
-                  class="btn-resume-reading"
-                >
-                  ▶ Resume Reading Issue #{{ prog.lastIssue?.issueNumber || 1 }} (Page {{ prog.lastPageNumber }})
-                </a>
+                <div class="reading-actions">
+                  <a
+                    [routerLink]="['/reader', prog.lastIssueId]"
+                    [queryParams]="{ page: prog.lastPageNumber }"
+                    class="btn-resume-reading"
+                  >
+                    ▶ Resume Issue #{{ prog.lastIssue?.issueNumber || 1 }} (Page {{ prog.lastPageNumber }})
+                  </a>
+                  <button
+                    class="btn-favorite"
+                    [class.favorited]="isFavorite()"
+                    (click)="toggleFavorite()"
+                    [disabled]="favoriteLoading()"
+                  >
+                    {{ isFavorite() ? '⭐ Bookmarked' : '☆ Add to Bookmarks' }}
+                  </button>
+                </div>
               </div>
             } @else if (c.issues && c.issues.length > 0) {
-              <a [routerLink]="['/reader', c.issues[0].issueId]" class="btn-start-reading">
-                ⚡ Start Reading Issue #1
-              </a>
+              <div class="reading-actions">
+                <a [routerLink]="['/reader', c.issues[0].issueId]" class="btn-start-reading">
+                  ⚡ Start Reading Issue #1
+                </a>
+                <button
+                  class="btn-favorite"
+                  [class.favorited]="isFavorite()"
+                  (click)="toggleFavorite()"
+                  [disabled]="favoriteLoading()"
+                >
+                  {{ isFavorite() ? '⭐ Bookmarked' : '☆ Add to Bookmarks' }}
+                </button>
+              </div>
             }
           </div>
         </div>
@@ -83,6 +103,219 @@
               </div>
             </div>
           }
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations Section (Phase 5) -->
+    @if (recommendations().length > 0) {
+      <div class="recommendations-section">
+        <div class="detail-container">
+          <div class="section-title-row">
+            <h2>✨ Readers Also Enjoyed</h2>
+            <span class="sub-text">Recommended based on universe, genre, and reading trends</span>
+          </div>
+          <div class="recs-grid">
+            @for (rec of recommendations(); track rec.comicId) {
+              <a [routerLink]="['/comic', rec.slug]" class="rec-card">
+                <div class="rec-cover">
+                  <img [src]="rec.coverImage" [alt]="rec.title" />
+                  <span class="rec-badge" *ngIf="rec.universe">{{ rec.universe.name }}</span>
+                </div>
+                <div class="rec-info">
+                  <h4>{{ rec.title }}</h4>
+                  <div class="rec-meta">
+                    <span>👁️ {{ rec.viewsCount | number }} reads</span>
+                    <span class="rec-creator">{{ rec.creator }}</span>
+                  </div>
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Community Reviews & Star Ratings Section (Phase 5) -->
+    <div class="reviews-section">
+      <div class="detail-container">
+        <div class="reviews-layout">
+          <!-- Left Column: Rating Breakdown Card -->
+          <div class="rating-summary-card">
+            <h3>Community Rating</h3>
+            <div class="score-display">
+              <span class="big-score">{{ reviewsData()?.averageRating || '5.0' }}</span>
+              <div class="stars-gold">
+                <span>★★★★★</span>
+              </div>
+              <span class="review-count">Based on {{ reviewsData()?.totalReviews || 0 }} reviews</span>
+            </div>
+
+            <div class="rating-breakdown" *ngIf="reviewsData()?.ratingDistribution as dist">
+              <div class="breakdown-bar-row">
+                <span>5 ★</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="(dist[5] / (reviewsData()?.totalReviews || 1)) * 100"></div>
+                </div>
+                <span>{{ dist[5] || 0 }}</span>
+              </div>
+              <div class="breakdown-bar-row">
+                <span>4 ★</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="(dist[4] / (reviewsData()?.totalReviews || 1)) * 100"></div>
+                </div>
+                <span>{{ dist[4] || 0 }}</span>
+              </div>
+              <div class="breakdown-bar-row">
+                <span>3 ★</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="(dist[3] / (reviewsData()?.totalReviews || 1)) * 100"></div>
+                </div>
+                <span>{{ dist[3] || 0 }}</span>
+              </div>
+              <div class="breakdown-bar-row">
+                <span>2 ★</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="(dist[2] / (reviewsData()?.totalReviews || 1)) * 100"></div>
+                </div>
+                <span>{{ dist[2] || 0 }}</span>
+              </div>
+              <div class="breakdown-bar-row">
+                <span>1 ★</span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="(dist[1] / (reviewsData()?.totalReviews || 1)) * 100"></div>
+                </div>
+                <span>{{ dist[1] || 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Write Review Form & Reviews Feed -->
+          <div class="reviews-feed-column">
+            <!-- Review Submission Form -->
+            <div class="write-review-card">
+              <h4>Write a Review & Rating</h4>
+              @if (authService.isLoggedIn()) {
+                <form (ngSubmit)="submitReview()" class="review-form">
+                  <div class="form-star-picker">
+                    <label>Your Rating:</label>
+                    <div class="star-selector">
+                      @for (star of [1, 2, 3, 4, 5]; track star) {
+                        <button
+                          type="button"
+                          class="star-btn"
+                          [class.selected]="star <= userRating()"
+                          (click)="userRating.set(star)"
+                        >
+                          ★
+                        </button>
+                      }
+                      <span class="rating-text-label">{{ userRating() }} of 5 Stars</span>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <input
+                      type="text"
+                      [ngModel]="reviewTitle()"
+                      (ngModelChange)="reviewTitle.set($event)"
+                      name="reviewTitle"
+                      placeholder="Headline / Summary (e.g. Unbelievable cliffhanger!)"
+                      class="review-input"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <textarea
+                      [ngModel]="reviewText()"
+                      (ngModelChange)="reviewText.set($event)"
+                      name="reviewText"
+                      rows="3"
+                      placeholder="Share your thoughts about the storyline, artwork, or character development..."
+                      required
+                      class="review-textarea"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-footer-row">
+                    <label class="spoiler-toggle">
+                      <input
+                        type="checkbox"
+                        [ngModel]="hasSpoilers()"
+                        (ngModelChange)="hasSpoilers.set($event)"
+                        name="hasSpoilers"
+                      />
+                      <span>⚠️ Contains Story Spoilers</span>
+                    </label>
+
+                    <button
+                      type="submit"
+                      class="btn-submit-review"
+                      [disabled]="isSubmittingReview() || !reviewText().trim()"
+                    >
+                      {{ isSubmittingReview() ? 'Posting...' : 'Post Review' }}
+                    </button>
+                  </div>
+                </form>
+              } @else {
+                <div class="guest-review-prompt">
+                  <p>Sign in to rate and share your thoughts with the reader community.</p>
+                  <button class="btn-signin-prompt" (click)="authService.openAuthModal('login')">
+                    🔑 Sign In to Review
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Existing Reviews List -->
+            <div class="reviews-list">
+              @for (rev of reviewsData()?.reviews || []; track rev.reviewId) {
+                <div class="review-item-card">
+                  <div class="review-item-header">
+                    <div class="reviewer-meta">
+                      <div class="reviewer-avatar">
+                        {{ rev.user?.firstName?.charAt(0) || 'U' }}
+                      </div>
+                      <div>
+                        <strong>{{ rev.user?.firstName }} {{ rev.user?.lastName }}</strong>
+                        <div class="review-stars">
+                          <span class="gold-star">{{ '★'.repeat(rev.rating) }}</span>
+                          <span class="gray-star">{{ '★'.repeat(5 - rev.rating) }}</span>
+                          <small class="review-date">{{ rev.createdAt | date:'mediumDate' }}</small>
+                        </div>
+                      </div>
+                    </div>
+
+                    @if (authService.currentUser()?.userId === rev.userId || authService.isAdmin()) {
+                      <button
+                        class="btn-delete-rev"
+                        (click)="deleteReview(rev.reviewId)"
+                        title="Delete Review"
+                      >
+                        🗑️
+                      </button>
+                    }
+                  </div>
+
+                  <div class="review-content">
+                    <h5 *ngIf="rev.reviewTitle" class="review-title">{{ rev.reviewTitle }}</h5>
+
+                    @if (rev.hasSpoilers && !revealedSpoilers().has(rev.reviewId)) {
+                      <div class="spoiler-blur-cover" (click)="toggleSpoiler(rev.reviewId)">
+                        <span>⚠️ This review contains spoilers. Click to reveal.</span>
+                      </div>
+                    } @else {
+                      <p class="review-body-text">{{ rev.reviewText }}</p>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <div class="no-reviews-box">
+                  <p>🌟 Be the first reader to write a review for this series!</p>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       </div>
     </div>
