@@ -25,4 +25,7 @@ export class IssuePage {
 
   @Column({ name: 'image_url', length: 500 })
   imageUrl: string;
+
+  @Column({ type: 'text', nullable: true })
+  transcript: string | null;
 }

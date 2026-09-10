@@ -50,6 +50,10 @@ export class ReaderComponent implements OnInit {
   newNoteText = signal<string>('');
   selectedNoteColor = signal<string>('#f59e0b');
 
+  // Phase 9: Audio TTS Narrator
+  isNarrating = signal<boolean>(false);
+  speechRate = signal<number>(1.0);
+
   // Preloaded image URLs cache
   private preloadedUrls = new Set<string>();
 
@@ -244,6 +248,33 @@ export class ReaderComponent implements OnInit {
 
   get currentPageData(): IssuePage | undefined {
     return this.pages().find((p) => p.pageNumber === this.currentPage());
+  }
+
+  toggleNarration() {
+    if (!('speechSynthesis' in window)) {
+      alert('Speech synthesis is not supported on your browser.');
+      return;
+    }
+
+    if (this.isNarrating()) {
+      window.speechSynthesis.cancel();
+      this.isNarrating.set(false);
+      return;
+    }
+
+    const curPage = this.currentPageData;
+    const textToSpeak = (curPage as any)?.transcript ||
+      `Reading ${this.issue()?.title || 'comic'}, page ${this.currentPage()} of ${this.totalPages}. Immerse yourself in the action panels.`;
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.rate = this.speechRate();
+    utterance.pitch = 1.0;
+    utterance.onend = () => this.isNarrating.set(false);
+    utterance.onerror = () => this.isNarrating.set(false);
+
+    window.speechSynthesis.cancel(); // Stop any pending
+    window.speechSynthesis.speak(utterance);
+    this.isNarrating.set(true);
   }
 
   get doubleSpreadData(): { left?: IssuePage; right?: IssuePage } {

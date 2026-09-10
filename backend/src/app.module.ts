@@ -17,6 +17,7 @@ import { Reservation } from './entities/reservation.entity.js';
 import { Review } from './entities/review.entity.js';
 import { Annotation } from './entities/annotation.entity.js';
 import { Notification } from './entities/notification.entity.js';
+import { AiConversation } from './entities/ai-conversation.entity.js';
 
 import { AuthModule } from './auth/auth.module.js';
 import { ComicsModule } from './comics/comics.module.js';
@@ -28,6 +29,7 @@ import { CirculationModule } from './circulation/circulation.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { AnnotationsModule } from './annotations/annotations.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { AiModule } from './ai/ai.module.js';
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
         Review,
         Annotation,
         Notification,
+        AiConversation,
       ],
       synchronize: false,
       logging: false,
@@ -70,6 +73,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
     ReviewsModule,
     AnnotationsModule,
     NotificationsModule,
+    AiModule,
   ],
 })
 export class AppModule {}

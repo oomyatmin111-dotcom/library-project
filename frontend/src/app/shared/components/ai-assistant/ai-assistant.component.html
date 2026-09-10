@@ -1,0 +1,152 @@
+<!-- Floating Trigger Button -->
+<button
+  class="ai-trigger-fab"
+  (click)="toggleOpen()"
+  [class.active]="isOpen()"
+  title="Ask Hero AI Comic & Library Guide"
+>
+  <span class="fab-icon">🤖</span>
+  <span class="fab-label">Hero AI</span>
+  <span class="pulse-ring"></span>
+</button>
+
+<!-- AI Drawer Window -->
+@if (isOpen()) {
+  <div class="ai-drawer" (click)="$event.stopPropagation()">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="ai-brand">
+        <span class="ai-avatar">🦸</span>
+        <div>
+          <h4>Hero AI Assistant</h4>
+          <span class="ai-status">● Comic Lore & Speech Search</span>
+        </div>
+      </div>
+      <button class="btn-close" (click)="close()">✕</button>
+    </div>
+
+    <!-- Mode Switcher Tabs -->
+    <div class="mode-tabs">
+      <button
+        class="mode-tab"
+        [class.active]="activeMode() === 'chat'"
+        (click)="setMode('chat')"
+      >
+        💬 Lore & Q&A
+      </button>
+      <button
+        class="mode-tab"
+        [class.active]="activeMode() === 'dialogue'"
+        (click)="setMode('dialogue')"
+      >
+        🔍 Speech Bubble Search
+      </button>
+    </div>
+
+    <!-- MODE 1: Interactive Lore Chat -->
+    @if (activeMode() === 'chat') {
+      <div class="chat-thread">
+        @for (m of messages(); track m.time) {
+          <div class="chat-bubble-wrap" [class.user]="m.sender === 'user'" [class.ai]="m.sender === 'ai'">
+            <div class="bubble-sender">{{ m.sender === 'user' ? 'You' : 'Hero AI' }}</div>
+            <div class="bubble-content" [innerHTML]="m.text"></div>
+            <div class="bubble-time">{{ m.time | date:'shortTime' }}</div>
+          </div>
+        }
+
+        @if (loading()) {
+          <div class="ai-typing">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <small>Consulting multiverse archives...</small>
+          </div>
+        }
+      </div>
+
+      <!-- Quick Suggested Lore Prompts -->
+      <div class="quick-prompts-tray">
+        <span class="tray-label">Try Asking:</span>
+        <div class="chips-scroll">
+          @for (qp of quickPrompts(); track qp.label) {
+            <button class="prompt-chip" (click)="sendMessage(qp.prompt)">
+              {{ qp.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <div class="chat-input-bar">
+        <input
+          type="text"
+          [(ngModel)]="inputMessage"
+          (keyup.enter)="sendMessage()"
+          placeholder="Ask about Batman, Spider-Man, Clean Code..."
+          class="chat-input"
+        />
+        <button
+          class="btn-send"
+          [disabled]="!inputMessage().trim() || loading()"
+          (click)="sendMessage()"
+        >
+          ➤
+        </button>
+      </div>
+    }
+
+    <!-- MODE 2: Speech Bubble & Dialogue Search -->
+    @if (activeMode() === 'dialogue') {
+      <div class="dialogue-panel">
+        <div class="dialogue-search-box">
+          <input
+            type="text"
+            [(ngModel)]="dialogueQuery"
+            (keyup.enter)="onSearchDialogue()"
+            placeholder="Search dialogue (e.g. 'vengeance', 'responsibility')..."
+            class="dialogue-input"
+          />
+          <button class="btn-dialogue-search" (click)="onSearchDialogue()">
+            🔍 Search
+          </button>
+        </div>
+
+        <div class="dialogue-results-list">
+          @if (dialogueLoading()) {
+            <div class="ai-typing">
+              <small>Searching speech bubbles inside comic panels...</small>
+            </div>
+          } @else if (dialogueResults().length > 0) {
+            @for (res of dialogueResults(); track res.pageId) {
+              <div class="dialogue-card">
+                <img [src]="res.imageUrl" [alt]="res.comicTitle" class="dialogue-thumb" />
+                <div class="dialogue-info">
+                  <div class="dialogue-comic">{{ res.comicTitle }}</div>
+                  <div class="dialogue-issue">{{ res.issueTitle }} — Page {{ res.pageNumber }}</div>
+                  <p class="dialogue-quote">"{{ res.transcript }}"</p>
+                  <a
+                    [routerLink]="['/reader', res.issueId]"
+                    [queryParams]="{ page: res.pageNumber }"
+                    (click)="close()"
+                    class="jump-reader-btn"
+                  >
+                    Open in Reader P.{{ res.pageNumber }} ▶
+                  </a>
+                </div>
+              </div>
+            }
+          } @else {
+            <div class="empty-dialogue">
+              <p>Type keywords spoken by heroes or villains to find the exact comic page!</p>
+              <div class="example-keywords">
+                <span (click)="dialogueQuery.set('vengeance'); onSearchDialogue()">#vengeance</span>
+                <span (click)="dialogueQuery.set('responsibility'); onSearchDialogue()">#responsibility</span>
+                <span (click)="dialogueQuery.set('Catwoman'); onSearchDialogue()">#Catwoman</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

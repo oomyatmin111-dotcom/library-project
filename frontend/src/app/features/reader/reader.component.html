@@ -58,6 +58,16 @@
           📑 Notes ({{ annotations().length }})
         </button>
 
+        <!-- Phase 9: Audio TTS Voice Narrator -->
+        <button
+          class="narrate-btn"
+          [class.narrating]="isNarrating()"
+          (click)="toggleNarration()"
+          [title]="isNarrating() ? 'Stop Audio Narration' : 'Narrate Page Speech Bubbles & Panels (TTS)'"
+        >
+          {{ isNarrating() ? '⏹️ Stop' : '🔊 Narrate' }}
+        </button>
+
         <!-- Reading Modes -->
         <div class="mode-switch">
           <button
@@ -318,6 +328,14 @@
                     [title]="note.note"
                   >
                     📝 {{ note.note }}
+                  </div>
+                }
+
+                <!-- Phase 9: Speech Bubble Dialogue Banner -->
+                @if ($any(page).transcript) {
+                  <div class="speech-dialogue-banner">
+                    <span class="dialogue-icon">💬</span>
+                    <span class="dialogue-text">"{{ $any(page).transcript }}"</span>
                   </div>
                 }
 
