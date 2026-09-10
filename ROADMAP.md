@@ -141,6 +141,44 @@ An all-in-one modern platform combining physical library management (books, borr
 
 ---
 
+### Phase 9: AI Comic Lore Assistant, Dialogue Bubble Search & Audio TTS Narrator (Completed [x])
+- [x] **AI Comic Lore Assistant**
+  - [x] Backend `AiModule`, `AiService`, and `AiController` (`/api/ai/chat`, `/api/ai/quick-prompts`)
+  - [x] Intelligent contextual comic lore knowledge base covering DC, Marvel, manga timelines & library catalog
+  - [x] Floating reactive AI Assistant widget (`<app-ai-assistant>`) with expandable chat window and quick lore prompts
+  - [x] Persistent conversation memory stored in database (`ai_conversations` table)
+- [x] **Speech Bubble Dialogue Search**
+  - [x] Database migration adding full-text transcript field to `issue_pages`
+  - [x] Dialogue snippet search endpoint (`/api/ai/dialogue-search?q=...`)
+  - [x] Reader auto-navigation to exact page when clicking dialogue search results
+- [x] **Reader Audio TTS Narrator**
+  - [x] Client-side Web Speech Synthesis integration in `ReaderComponent`
+  - [x] Play/Pause voice narration controls and playback speed slider (0.75x to 1.5x)
+  - [x] Floating active dialogue subtitle banner highlighting narrated text
+
+---
+
+### Phase 10: VIP Subscriptions, Coin Wallet, CBZ Archive Exporter & Audit Trail (Completed [x])
+- [x] **VIP Membership Passes & Subscriptions**
+  - [x] User membership tier schema (`FREE`, `GOLD_VIP`, `PLATINUM_VIP`)
+  - [x] VIP Pass cards with perks breakdown, bonus coin credits, and one-click upgrades in Member Profile
+  - [x] Distinctive glowing VIP badges in hero pass (`👑 GOLD VIP`, `💎 PLATINUM VIP`)
+- [x] **Coin Wallet & Chapter Unlocking**
+  - [x] Backend `WalletModule` (`wallets` & `wallet_transactions` tables)
+  - [x] Instant top-up packs (Starter Pouch, Reader Cache, Hero Chest, Collector Vault)
+  - [x] Ledger transaction history table showing credits, debits, and timestamps
+  - [x] API endpoint for chapter unlocking with coin deductions and balance checks
+- [x] **Digital CBZ Archive Exporter**
+  - [x] Dynamic generation of standard `.cbz` comic book archives (`GET /api/issues/:id/export-cbz`)
+  - [x] Standard `ComicInfo.xml` metadata inclusion compatible with Tachiyomi, Chunky, ComicRack
+  - [x] Direct one-click "📦 CBZ" export button in Reader navigation bar
+- [x] **Enterprise Security & Financial Audit Trail**
+  - [x] Comprehensive database audit ledger (`audit_logs` table)
+  - [x] Automatic audit logging for top-ups, chapter unlocks, tier upgrades, and administrative actions
+  - [x] Admin Portal dedicated "🛡️ Audit Trail & Logs" tab with instant search and action/entity filtering
+
+---
+
 ## Release Milestones
 
 | Version | Milestone | Target |
@@ -151,6 +189,8 @@ An all-in-one modern platform combining physical library management (books, borr
 | **v0.4.0** | Enhanced Reader Modes & Content Uploader | Completed [x] |
 | **v1.0.0** | Production-ready Library & Comic Platform | Completed [x] |
 | **v1.1.0** | Offline Reader, Annotations, Notifications & Analytics | Completed [x] |
+| **v1.2.0** | AI Lore Assistant, Dialogue Search & Audio TTS Narrator | Completed [x] |
+| **v2.0.0** | VIP Subscriptions, Coin Wallet, CBZ Exporter & Security Audit Trail | Completed [x] |
 
 ---
 
