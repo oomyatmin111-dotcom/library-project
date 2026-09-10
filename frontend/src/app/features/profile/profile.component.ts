@@ -1,12 +1,21 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ProgressService } from '../../core/services/progress.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { UserProfile, BorrowingItem, UserFavoriteItem } from '../../core/models/user.model';
 import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
+
+export interface AchievementBadge {
+  id: string;
+  icon: string;
+  name: string;
+  desc: string;
+  unlocked: boolean;
+}
 
 @Component({
   selector: 'app-profile',
@@ -17,6 +26,7 @@ import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
 })
 export class ProfileComponent implements OnInit {
   authService = inject(AuthService);
+  translationService = inject(TranslationService);
   private userProfileService = inject(UserProfileService);
   private progressService = inject(ProgressService);
   private router = inject(Router);
@@ -29,6 +39,24 @@ export class ProfileComponent implements OnInit {
   favorites = signal<UserFavoriteItem[]>([]);
   continueList = signal<ReadingProgress[]>([]);
   historyList = signal<ReadingHistory[]>([]);
+
+  // Phase 7: Reading Streak & Gamification
+  readingStreak = signal<number>(5);
+
+  badges = computed<AchievementBadge[]>(() => {
+    const loans = this.borrowings().length;
+    const history = this.historyList().length;
+    const favs = this.favorites().length;
+
+    return [
+      { id: 'first_read', icon: '🥇', name: 'First Read', desc: 'Read your first chapter', unlocked: history >= 1 },
+      { id: 'streak_master', icon: '🔥', name: 'Streak Master', desc: 'Maintained a 5-day active streak', unlocked: this.readingStreak() >= 5 },
+      { id: 'comic_buff', icon: '⚡', name: 'Super Reader', desc: 'Read multiple comic chapters', unlocked: history >= 2 },
+      { id: 'collector', icon: '⭐', name: 'Top Curator', desc: 'Added favorite comics to collection', unlocked: favs >= 1 },
+      { id: 'library_patron', icon: '📚', name: 'Library Patron', desc: 'Circulated physical books from desk', unlocked: loans >= 1 },
+      { id: 'scholar', icon: '🎓', name: 'Grand Scholar', desc: 'Mastered both digital & print reading', unlocked: history >= 1 && loans >= 1 },
+    ];
+  });
 
   // Profile Edit
   editFirstName = signal<string>('');

@@ -24,6 +24,7 @@
             <span class="meta-pill">🪪 ID: <strong>{{ profile()?.membershipNo }}</strong></span>
             <span class="meta-pill" *ngIf="profile()?.phone">📞 {{ profile()?.phone }}</span>
             <span class="meta-pill status-active">● Active Status</span>
+            <span class="meta-pill streak-pill">🔥 {{ readingStreak() }} Days Streak</span>
           </div>
         </div>
 
@@ -49,6 +50,28 @@
         <div class="stat-box">
           <span class="stat-num">{{ favorites().length }}</span>
           <span class="stat-label">Bookmarked Comics</span>
+        </div>
+      </div>
+
+      <!-- Phase 7 Gamification Badges Section -->
+      <div class="badges-showcase">
+        <h3 class="badges-title">🏆 {{ translationService.t('profile.badges') }}</h3>
+        <div class="badges-grid">
+          <div
+            *ngFor="let b of badges()"
+            class="badge-card"
+            [class.unlocked]="b.unlocked"
+            [class.locked]="!b.unlocked"
+          >
+            <div class="badge-icon-wrap">
+              <span class="badge-icon">{{ b.icon }}</span>
+              <span *ngIf="b.unlocked" class="badge-check">✓</span>
+            </div>
+            <div class="badge-info">
+              <h4 class="badge-name">{{ b.name }}</h4>
+              <p class="badge-desc">{{ b.desc }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

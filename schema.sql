@@ -194,3 +194,37 @@ CREATE INDEX `idx_book_copies_barcode` ON `book_copies` (`barcode`);
 CREATE INDEX `idx_borrowings_status` ON `borrowings` (`status`);
 CREATE INDEX `idx_borrowings_due_date` ON `borrowings` (`due_date`);
 CREATE INDEX `idx_users_membership` ON `users` (`membership_no`);
+
+-- -----------------------------------------------------
+-- 13. Annotations Table (Phase 7)
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `annotations` (
+    `annotation_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `issue_id` INT NOT NULL,
+    `page_number` INT NOT NULL,
+    `note` TEXT NOT NULL,
+    `color` VARCHAR(20) DEFAULT '#f59e0b',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_annotations_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_annotations_issue` FOREIGN KEY (`issue_id`) REFERENCES `issues` (`issue_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------------
+-- 14. Notifications Table (Phase 8)
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `notifications` (
+    `notification_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `message` TEXT NOT NULL,
+    `type` ENUM('LOAN_DUE', 'RESERVATION_READY', 'NEW_ISSUE', 'SYSTEM') DEFAULT 'SYSTEM',
+    `is_read` BOOLEAN DEFAULT FALSE,
+    `link_url` VARCHAR(255) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE INDEX `idx_annotations_issue_user` ON `annotations` (`issue_id`, `user_id`);
+CREATE INDEX `idx_notifications_user_read` ON `notifications` (`user_id`, `is_read`);
+

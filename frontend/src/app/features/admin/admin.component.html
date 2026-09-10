@@ -59,6 +59,13 @@
         >
           🔖 Reservations
         </button>
+        <button
+          class="adm-tab btn-highlight-amber"
+          [class.active]="activeTab() === 'analytics'"
+          (click)="setTab('analytics')"
+        >
+          📈 {{ translationService.t('admin.analytics') }}
+        </button>
       </div>
     </div>
 
@@ -751,6 +758,130 @@
             </table>
           </div>
         </div>
+      </div>
+    }
+
+    <!-- TAB 8: EXECUTIVE ANALYTICS & CSV EXPORT (Phase 8) -->
+    @if (activeTab() === 'analytics') {
+      <div class="analytics-tab-panel">
+        <div class="analytics-top-bar">
+          <div>
+            <h2>📈 {{ translationService.t('admin.analytics') }}</h2>
+            <p class="section-subtitle">Real-time circulation velocity, fine recovery ratios, and reader popularity metrics</p>
+          </div>
+          <button
+            class="export-csv-btn"
+            [disabled]="exportingCsv()"
+            (click)="onExportCsv()"
+          >
+            {{ exportingCsv() ? '⏳ Generating...' : '📥 ' + translationService.t('admin.exportCsv') }}
+          </button>
+        </div>
+
+        @if (analytics(); as a) {
+          <!-- KPI Metrics Row -->
+          <div class="analytics-kpi-grid">
+            <div class="kpi-card blue">
+              <span class="kpi-icon">📖</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">{{ a.overview.totalBorrowings }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.totalBorrowings') }}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card emerald">
+              <span class="kpi-icon">⏳</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">{{ a.overview.activeLoans }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.activeLoans') }}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card cyan">
+              <span class="kpi-icon">✅</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">{{ a.overview.returnedLoans }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.returnedLoans') }}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card rose">
+              <span class="kpi-icon">⚠️</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">{{ a.overview.overdueLoans }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.overdueLoans') }}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card amber">
+              <span class="kpi-icon">💵</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">${{ a.fines.totalCollected | number:'1.2-2' }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.finesCollected') }}</span>
+              </div>
+            </div>
+
+            <div class="kpi-card purple">
+              <span class="kpi-icon">🛡️</span>
+              <div class="kpi-meta">
+                <span class="kpi-val">${{ a.fines.totalWaived | number:'1.2-2' }}</span>
+                <span class="kpi-label">{{ translationService.t('admin.finesWaived') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Popular Velocity Grids -->
+          <div class="analytics-split-grid">
+            <!-- Top Books -->
+            <div class="analytics-card">
+              <div class="card-head">
+                <h3>📚 {{ translationService.t('admin.popularBooks') }}</h3>
+                <span class="badge-tag">Print Loans</span>
+              </div>
+              <div class="rank-list">
+                @for (b of a.popularBooks; track b.isbn; let i = $index) {
+                  <div class="rank-item">
+                    <span class="rank-num">#{{ i + 1 }}</span>
+                    <div class="rank-info">
+                      <strong>{{ b.title }}</strong>
+                      <small>ISBN: {{ b.isbn }}</small>
+                    </div>
+                    <span class="rank-count">{{ b.loanCount }} loans</span>
+                  </div>
+                } @empty {
+                  <p class="empty-hint">No circulation loan records yet.</p>
+                }
+              </div>
+            </div>
+
+            <!-- Top Comics -->
+            <div class="analytics-card">
+              <div class="card-head">
+                <h3>⚡ {{ translationService.t('admin.popularComics') }}</h3>
+                <span class="badge-tag comic">Digital Reads</span>
+              </div>
+              <div class="rank-list">
+                @for (c of a.popularComics; track c.slug; let i = $index) {
+                  <div class="rank-item">
+                    <span class="rank-num gold">#{{ i + 1 }}</span>
+                    <div class="rank-info">
+                      <strong>{{ c.title }}</strong>
+                      <small>Slug: {{ c.slug }}</small>
+                    </div>
+                    <span class="rank-count">{{ c.readerCount }} readers</span>
+                  </div>
+                } @empty {
+                  <p class="empty-hint">No reading sessions recorded yet.</p>
+                }
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="analytics-loading">
+            <div class="spinner"></div>
+            <p>Loading real-time executive analytics data...</p>
+          </div>
+        }
       </div>
     }
   </div>

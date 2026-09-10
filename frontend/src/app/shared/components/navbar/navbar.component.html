@@ -11,7 +11,7 @@
     <!-- Nav Links -->
     <nav class="nav-links">
       <a routerLink="/" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
-        <span class="nav-icon">⚡</span> Home
+        <span class="nav-icon">⚡</span> {{ translationService.t('nav.home') }}
       </a>
       <a routerLink="/" [queryParams]="{ universe: 'dc' }" routerLinkActive="active-link">
         <span class="badge-dc">DC</span> DC Universe
@@ -20,13 +20,13 @@
         <span class="badge-marvel">MARVEL</span> Marvel Universe
       </a>
       <a routerLink="/" [queryParams]="{ type: 'ebook' }" routerLinkActive="active-link">
-        <span class="nav-icon">📖</span> E-Books
+        <span class="nav-icon">📖</span> {{ translationService.t('nav.books') }}
       </a>
       <a routerLink="/library" routerLinkActive="active-link">
-        <span class="nav-icon">📚</span> Reading Log
+        <span class="nav-icon">📚</span> {{ translationService.t('nav.comics') }}
       </a>
       <a *ngIf="authService.isLoggedIn()" routerLink="/profile" routerLinkActive="active-link">
-        <span class="nav-icon">🪪</span> My Dashboard
+        <span class="nav-icon">🪪</span> {{ translationService.t('nav.profile') }}
       </a>
     </nav>
 
@@ -43,9 +43,76 @@
         <button (click)="onSearch()" class="search-btn">🔍</button>
       </div>
 
+      <!-- Language Switcher Toggle -->
+      <button
+        type="button"
+        class="lang-toggle-btn"
+        (click)="toggleLanguage()"
+        [title]="'Current: ' + (translationService.currentLang() === 'en' ? 'English' : 'မြန်မာစာ')"
+      >
+        🌐 <span class="lang-text">{{ translationService.currentLang() === 'en' ? 'EN' : 'မြန်မာ' }}</span>
+      </button>
+
+      <!-- In-App Notification Bell (Logged In) -->
+      <div *ngIf="authService.isLoggedIn()" class="notification-wrap">
+        <button
+          type="button"
+          class="bell-btn"
+          (click)="toggleNotification()"
+          title="Notifications & Loan Due Alerts"
+        >
+          🔔
+          <span *ngIf="notificationService.unreadCount() > 0" class="bell-badge">
+            {{ notificationService.unreadCount() }}
+          </span>
+        </button>
+
+        <!-- Notification Dropdown -->
+        <div *ngIf="isNotificationOpen()" class="notification-dropdown">
+          <div class="notif-header">
+            <div class="notif-title-row">
+              <strong>🔔 {{ translationService.t('nav.notifications') }}</strong>
+              <button
+                *ngIf="notificationService.unreadCount() > 0"
+                class="mark-all-btn"
+                (click)="markAllRead()"
+              >
+                {{ translationService.t('nav.markAllRead') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="notif-list">
+            <div
+              *ngFor="let n of notificationService.notifications()"
+              class="notif-item"
+              [class.unread]="!n.isRead"
+              (click)="onNotificationClick(n)"
+            >
+              <div class="notif-icon-col">
+                <span *ngIf="n.type === 'LOAN_DUE'" class="type-icon loan">⏳</span>
+                <span *ngIf="n.type === 'RESERVATION_READY'" class="type-icon res">📦</span>
+                <span *ngIf="n.type === 'NEW_ISSUE'" class="type-icon comic">📖</span>
+                <span *ngIf="n.type === 'SYSTEM'" class="type-icon system">ℹ️</span>
+              </div>
+              <div class="notif-content">
+                <div class="notif-subject">{{ n.title }}</div>
+                <div class="notif-body">{{ n.message }}</div>
+                <div class="notif-time">{{ n.createdAt | date: 'short' }}</div>
+              </div>
+              <span *ngIf="!n.isRead" class="unread-dot"></span>
+            </div>
+
+            <div *ngIf="notificationService.notifications().length === 0" class="empty-notifs">
+              {{ translationService.t('nav.noNotifications') }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Admin link if privileged -->
       <a *ngIf="authService.isAdmin() || authService.isLibrarian()" routerLink="/admin" class="admin-link" title="Open Admin Panel">
-        ⚙️ Admin
+        ⚙️ {{ translationService.t('nav.admin') }}
       </a>
 
       <!-- Logged In User Pill with Dropdown -->
@@ -77,7 +144,7 @@
               📚 Continue Reading
             </a>
             <a *ngIf="authService.isAdmin() || authService.isLibrarian()" routerLink="/admin" (click)="closeMenu()" class="dropdown-item admin-item">
-              ⚙️ Admin Management Console
+              ⚙️ {{ translationService.t('nav.admin') }}
             </a>
           </div>
 
@@ -92,7 +159,7 @@
           </div>
 
           <div class="dropdown-footer">
-            <button (click)="logout()" class="dropdown-logout">Sign Out 🚪</button>
+            <button (click)="logout()" class="dropdown-logout">{{ translationService.t('nav.logout') }} 🚪</button>
           </div>
         </div>
       </div>
@@ -100,7 +167,7 @@
       <!-- Logged Out Sign In Button -->
       <div *ngIf="!authService.isLoggedIn()" class="auth-actions">
         <button class="signin-nav-btn" (click)="authService.openAuthModal('login')">
-          ⚡ Sign In
+          ⚡ {{ translationService.t('nav.login') }}
         </button>
       </div>
     </div>

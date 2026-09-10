@@ -110,6 +110,37 @@ An all-in-one modern platform combining physical library management (books, borr
 
 ---
 
+### Phase 7: Advanced Digital Reader 2.0, Interactive Annotations & Offline PWA (Completed [x])
+- [x] **Interactive Reader Annotations & Page Bookmarks**
+  - [x] Backend `annotations` entity, repository, and REST API (`/api/annotations`)
+  - [x] In-reader "Bookmark Page & Note" dialog with customizable color pins
+  - [x] Interactive Bookmarks Drawer for jumping straight to tagged comic panels
+  - [x] Margin sticky note pins rendered directly on active comic pages
+- [x] **Offline Download & Cache Engine**
+  - [x] Client-side `IndexedDB` storage service (`ComicReaderOfflineDB`)
+  - [x] "Download Offline" one-click action to save full chapters locally
+  - [x] Seamless fallback to offline cache when network connection is absent
+- [x] **Reading Streaks & Gamification Badges**
+  - [x] Reading activity and streak tracking (`🔥 5 Days Active Streak`)
+  - [x] Member profile achievement badges gallery (First Read, Streak Master, Scholar, etc.)
+
+---
+
+### Phase 8: In-App Notifications Center, Analytics Dashboard & Multi-Language Support (Completed [x])
+- [x] **In-App Notification Center**
+  - [x] Backend `notifications` module and automated loan due date alerts
+  - [x] Reactive bell icon in navbar with dynamic unread count badge
+  - [x] Notification dropdown with read/unread indicators, direct routing links, and mark all read
+- [x] **Executive Analytics Dashboard & CSV Export**
+  - [x] Real-time executive KPIs in Admin Portal (loan velocity, fine collections vs waivers)
+  - [x] Top 5 most borrowed physical books & most read digital comics
+  - [x] One-click circulation report export in standard CSV format (`/api/admin/circulation/export-csv`)
+- [x] **Bilingual Localization (i18n)**
+  - [x] English & Myanmar (မြန်မာဘာသာ) translation dictionary and reactive translation service
+  - [x] Persistent language toggle switch (`EN` / `မြန်မာ`) in the top navigation bar
+
+---
+
 ## Release Milestones
 
 | Version | Milestone | Target |
@@ -119,8 +150,10 @@ An all-in-one modern platform combining physical library management (books, borr
 | **v0.3.0** | Full Circulation Desk & Barcode Scanning | Completed [x] |
 | **v0.4.0** | Enhanced Reader Modes & Content Uploader | Completed [x] |
 | **v1.0.0** | Production-ready Library & Comic Platform | Completed [x] |
+| **v1.1.0** | Offline Reader, Annotations, Notifications & Analytics | Completed [x] |
 
 ---
 
 ## Contributing & Feedback
 Contributions, feature suggestions, and pull requests are warmly welcome! Please submit an issue to discuss new features or ideas.
+

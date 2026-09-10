@@ -40,4 +40,15 @@ export class AdminService {
   }): Observable<any> {
     return this.http.post(`${this.apiUrl}/issues/bulk`, data);
   }
+
+  getAnalytics(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/admin/analytics`);
+  }
+
+  downloadCirculationCsv(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/admin/circulation/export-csv`, {
+      responseType: 'blob',
+    });
+  }
 }
+

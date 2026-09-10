@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminService } from '../../core/services/admin.service';
 import { ComicService } from '../../core/services/comic.service';
 import { CirculationService, BorrowingLoan, CirculationFine, BookReservation } from '../../core/services/circulation.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { Comic } from '../../core/models/comic.model';
 
 @Component({
@@ -18,10 +19,13 @@ export class AdminComponent implements OnInit {
   private adminService = inject(AdminService);
   private comicService = inject(ComicService);
   private circService = inject(CirculationService);
+  translationService = inject(TranslationService);
 
   stats = signal<any>(null);
+  analytics = signal<any>(null);
   comics = signal<Comic[]>([]);
-  activeTab = signal<'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations'>('dashboard');
+  activeTab = signal<'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics'>('dashboard');
+  exportingCsv = signal<boolean>(false);
 
   // Circulation Desk Signals
   loans = signal<BorrowingLoan[]>([]);
@@ -285,11 +289,41 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations') {
+  loadAnalytics() {
+    this.adminService.getAnalytics().subscribe({
+      next: (data) => this.analytics.set(data),
+      error: (err) => console.error('Failed to load executive analytics', err),
+    });
+  }
+
+  onExportCsv() {
+    this.exportingCsv.set(true);
+    this.adminService.downloadCirculationCsv().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `circulation_report_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.exportingCsv.set(false);
+        this.showToast('📥 Circulation report CSV downloaded!');
+      },
+      error: (err) => {
+        this.exportingCsv.set(false);
+        alert('Failed to export CSV report');
+      },
+    });
+  }
+
+  setTab(tab: 'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics') {
     this.activeTab.set(tab);
     this.uploadedIssueId.set(null);
     if (tab === 'circulation' || tab === 'fines' || tab === 'reservations') {
       this.loadCirculationData();
+    } else if (tab === 'analytics') {
+      this.loadAnalytics();
     }
   }
 }
+

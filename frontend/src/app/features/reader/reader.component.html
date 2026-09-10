@@ -24,6 +24,40 @@
 
       <!-- Top Right Actions -->
       <div class="top-right">
+        <!-- Offline Download Button -->
+        <button
+          class="offline-btn"
+          [class.downloaded]="isDownloaded()"
+          [disabled]="isDownloading() || isDownloaded()"
+          (click)="downloadForOffline()"
+          [title]="isDownloaded() ? 'Available for offline reading' : 'Save this chapter locally for offline reading'"
+        >
+          {{ isDownloaded() ? '✓ Offline Ready' : (isDownloading() ? '⏳ Saving...' : '📥 Download') }}
+        </button>
+
+        <!-- Bookmark / Note Button (Logged In) -->
+        <button
+          *ngIf="authService.isLoggedIn()"
+          class="bookmark-btn"
+          (click)="openAnnotationModal()"
+          title="Add Bookmark or Note for current page"
+        >
+          🔖 Note
+          <span *ngIf="currentPageAnnotations().length > 0" class="page-note-badge">
+            {{ currentPageAnnotations().length }}
+          </span>
+        </button>
+
+        <!-- Bookmarks List Drawer Toggle -->
+        <button
+          *ngIf="authService.isLoggedIn() && annotations().length > 0"
+          class="drawer-toggle-btn"
+          (click)="toggleBookmarksDrawer()"
+          title="View all bookmarks in this chapter"
+        >
+          📑 Notes ({{ annotations().length }})
+        </button>
+
         <!-- Reading Modes -->
         <div class="mode-switch">
           <button
@@ -98,7 +132,7 @@
               [class.selected]="readerTheme() === 'dark'"
               (click)="setTheme('dark')"
             >
-              🌙 Dark
+              🌑 Dark
             </button>
             <button
               class="theme-btn sepia"
@@ -119,50 +153,134 @@
 
         <!-- Brightness Slider -->
         <div class="setting-group">
-          <div class="label-row">
-            <label>Luminance & Brightness</label>
-            <span class="val-tag">{{ brightness() }}%</span>
-          </div>
+          <label>Brightness: {{ brightness() }}%</label>
           <input
             type="range"
-            min="50"
-            max="130"
+            min="30"
+            max="120"
             [value]="brightness()"
             (input)="updateBrightness(+$any($event.target).value)"
-            class="slider-input"
+            class="slider"
           />
         </div>
 
-        <!-- Reading Flow Direction -->
-        <div class="setting-group">
-          <label>Reading Flow</label>
-          <div class="theme-buttons">
+        <!-- Shortcuts Help -->
+        <div class="setting-group shortcuts-info">
+          <label>Keyboard Shortcuts</label>
+          <div class="shortcut-row"><span>Next Page</span> <kbd>→</kbd> or <kbd>Space</kbd></div>
+          <div class="shortcut-row"><span>Prev Page</span> <kbd>←</kbd></div>
+          <div class="shortcut-row"><span>Fullscreen</span> <kbd>F</kbd></div>
+        </div>
+      </div>
+    }
+
+    <!-- BOOKMARK & NOTE MODAL -->
+    @if (isAnnotationModalOpen()) {
+      <div class="annotation-modal-backdrop" (click)="closeAnnotationModal()">
+        <div class="annotation-modal" (click)="$event.stopPropagation()">
+          <div class="annotation-modal-header">
+            <h4>🔖 Bookmark & Margin Note — Page {{ currentPage() }}</h4>
+            <button (click)="closeAnnotationModal()" class="popover-close">✕</button>
+          </div>
+          <div class="annotation-modal-body">
+            <label>Note / Observation:</label>
+            <textarea
+              [(ngModel)]="newNoteText"
+              rows="3"
+              placeholder="Write your note or reaction for this page..."
+              class="annotation-textarea"
+            ></textarea>
+
+            <div class="color-picker-row">
+              <span>Color Tag:</span>
+              <div class="color-swatches">
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="'#f59e0b'"
+                  [class.active]="selectedNoteColor() === '#f59e0b'"
+                  (click)="selectedNoteColor.set('#f59e0b')"
+                ></button>
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="'#3b82f6'"
+                  [class.active]="selectedNoteColor() === '#3b82f6'"
+                  (click)="selectedNoteColor.set('#3b82f6')"
+                ></button>
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="'#ef4444'"
+                  [class.active]="selectedNoteColor() === '#ef4444'"
+                  (click)="selectedNoteColor.set('#ef4444')"
+                ></button>
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="'#10b981'"
+                  [class.active]="selectedNoteColor() === '#10b981'"
+                  (click)="selectedNoteColor.set('#10b981')"
+                ></button>
+                <button
+                  type="button"
+                  class="swatch"
+                  [style.background]="'#8b5cf6'"
+                  [class.active]="selectedNoteColor() === '#8b5cf6'"
+                  (click)="selectedNoteColor.set('#8b5cf6')"
+                ></button>
+              </div>
+            </div>
+          </div>
+          <div class="annotation-modal-footer">
+            <button (click)="closeAnnotationModal()" class="btn-cancel">Cancel</button>
             <button
-              class="theme-btn"
-              [class.selected]="direction() === 'ltr'"
-              (click)="setDirection('ltr')"
+              (click)="saveAnnotation()"
+              [disabled]="!newNoteText().trim()"
+              class="btn-save"
             >
-              Standard (LTR)
-            </button>
-            <button
-              class="theme-btn"
-              [class.selected]="direction() === 'rtl'"
-              (click)="setDirection('rtl')"
-            >
-              Manga (RTL)
+              Save Bookmark
             </button>
           </div>
         </div>
+      </div>
+    }
 
-        <div class="shortcuts-tip">
-          <small>💡 <strong>Keyboard Shortcuts:</strong> Space / Right Arrow: Next Page • Left Arrow: Previous • F: Fullscreen</small>
+    <!-- BOOKMARKS DRAWER SIDEBAR -->
+    @if (isBookmarksDrawerOpen()) {
+      <div class="bookmarks-drawer" (click)="$event.stopPropagation()">
+        <div class="drawer-header">
+          <h4>📑 Chapter Bookmarks ({{ annotations().length }})</h4>
+          <button (click)="toggleBookmarksDrawer()" class="popover-close">✕</button>
+        </div>
+        <div class="drawer-list">
+          @for (a of annotations(); track a.annotationId) {
+            <div
+              class="bookmark-entry"
+              [style.border-left-color]="a.color"
+              (click)="jumpToBookmarkedPage(a.pageNumber)"
+            >
+              <div class="entry-top">
+                <span class="entry-page">Page {{ a.pageNumber }}</span>
+                <button
+                  class="btn-del-note"
+                  (click)="$event.stopPropagation(); deleteAnnotation(a.annotationId)"
+                  title="Remove Bookmark"
+                >
+                  ✕
+                </button>
+              </div>
+              <p class="entry-note">{{ a.note }}</p>
+              <span class="entry-time">{{ a.createdAt | date:'short' }}</span>
+            </div>
+          }
         </div>
       </div>
     }
 
     <!-- MAIN READING CANVAS -->
     <main
-      class="reader-content"
+      class="reader-canvas"
       [style.filter]="'brightness(' + brightness() + '%)'"
       (click)="toggleControls()"
     >
@@ -179,15 +297,35 @@
           </button>
 
           <div
-            class="page-canvas single-canvas"
+            class="single-page-display"
             [style.transform]="'scale(' + zoomLevel() + ')'"
-            (click)="$event.stopPropagation(); nextPage()"
+            (click)="$event.stopPropagation()"
           >
-            <img
-              [src]="currentImage"
-              [alt]="'Page ' + currentPage()"
-              class="comic-page-image"
-            />
+            @if (currentPageData; as page) {
+              <div class="page-container">
+                <img
+                  [src]="page.imageUrl"
+                  [alt]="'Page ' + page.pageNumber"
+                  class="comic-page-img"
+                  draggable="false"
+                />
+
+                <!-- Sticky Margin Notes on Page -->
+                @for (note of currentPageAnnotations(); track note.annotationId) {
+                  <div
+                    class="sticky-note-pin"
+                    [style.background]="note.color"
+                    [title]="note.note"
+                  >
+                    📝 {{ note.note }}
+                  </div>
+                }
+
+                <div class="page-badge">
+                  <span>P. {{ page.pageNumber }} / {{ totalPages }}</span>
+                </div>
+              </div>
+            }
           </div>
 
           <button
@@ -201,9 +339,8 @@
         </div>
       }
 
-      <!-- 2. Double-Page Spread Mode (Facing Pages) -->
+      <!-- 2. Double Page Spread Mode -->
       @else if (readingMode() === 'double') {
-        @let spread = getDoublePages();
         <div class="double-mode-wrapper">
           <button
             class="nav-arrow nav-prev"
@@ -215,38 +352,33 @@
           </button>
 
           <div
-            class="spread-canvas"
+            class="double-spread-display"
             [style.transform]="'scale(' + zoomLevel() + ')'"
-            (click)="$event.stopPropagation(); nextPage()"
+            (click)="$event.stopPropagation()"
           >
-            <!-- Single Cover Page -->
-            @if (spread.isCover) {
-              <div class="solo-cover-box">
+            @let spread = doubleSpreadData;
+            @if (spread.left) {
+              <div class="spread-pane">
                 <img
-                  [src]="spread.right?.imageUrl || currentImage"
-                  alt="Cover Page"
-                  class="comic-page-image cover-img"
+                  [src]="spread.left.imageUrl"
+                  [alt]="'Page ' + spread.left.pageNumber"
+                  class="spread-page-img"
+                  draggable="false"
                 />
-                <span class="spread-badge">Cover Page</span>
-              </div>
-            } @else {
-              <!-- Facing Page Pair -->
-              <div class="facing-pair" [class.rtl-pair]="direction() === 'rtl'">
-                <div class="spread-page left-page" *ngIf="spread.left">
-                  <img
-                    [src]="spread.left.imageUrl"
-                    [alt]="'Page ' + spread.left.pageNumber"
-                    class="comic-page-image"
-                  />
+                <div class="spread-badge">
                   <span class="spread-page-number">P. {{ spread.left.pageNumber }}</span>
                 </div>
-                <div class="book-spine-gutter"></div>
-                <div class="spread-page right-page" *ngIf="spread.right">
-                  <img
-                    [src]="spread.right.imageUrl"
-                    [alt]="'Page ' + spread.right.pageNumber"
-                    class="comic-page-image"
-                  />
+              </div>
+            }
+            @if (spread.right) {
+              <div class="spread-pane">
+                <img
+                  [src]="spread.right.imageUrl"
+                  [alt]="'Page ' + spread.right.pageNumber"
+                  class="spread-page-img"
+                  draggable="false"
+                />
+                <div class="spread-badge">
                   <span class="spread-page-number">P. {{ spread.right.pageNumber }}</span>
                 </div>
               </div>

@@ -15,6 +15,8 @@ import { Book } from './entities/book.entity.js';
 import { BookCopy } from './entities/book-copy.entity.js';
 import { Reservation } from './entities/reservation.entity.js';
 import { Review } from './entities/review.entity.js';
+import { Annotation } from './entities/annotation.entity.js';
+import { Notification } from './entities/notification.entity.js';
 
 import { AuthModule } from './auth/auth.module.js';
 import { ComicsModule } from './comics/comics.module.js';
@@ -24,6 +26,8 @@ import { AdminModule } from './admin/admin.module.js';
 import { UsersModule } from './users/users.module.js';
 import { CirculationModule } from './circulation/circulation.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { AnnotationsModule } from './annotations/annotations.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -50,6 +54,8 @@ import { ReviewsModule } from './reviews/reviews.module.js';
         BookCopy,
         Reservation,
         Review,
+        Annotation,
+        Notification,
       ],
       synchronize: false,
       logging: false,
@@ -62,6 +68,8 @@ import { ReviewsModule } from './reviews/reviews.module.js';
     AdminModule,
     CirculationModule,
     ReviewsModule,
+    AnnotationsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

@@ -4,6 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProgressService } from '../../core/services/progress.service';
 import { AuthService } from '../../core/services/auth.service';
+import { OfflineStorageService } from '../../core/services/offline-storage.service';
+import { AnnotationService, Annotation } from '../../core/services/annotation.service';
+import { TranslationService } from '../../core/services/translation.service';
 import { Issue, IssuePage } from '../../core/models/comic.model';
 
 export type ReadingMode = 'single' | 'double' | 'webtoon';
@@ -20,7 +23,10 @@ export type ReaderTheme = 'dark' | 'sepia' | 'light';
 export class ReaderComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private progressService = inject(ProgressService);
+  private offlineService = inject(OfflineStorageService);
+  private annotationService = inject(AnnotationService);
   authService = inject(AuthService);
+  translationService = inject(TranslationService);
 
   issue = signal<Issue | null>(null);
   pages = signal<IssuePage[]>([]);
@@ -35,8 +41,23 @@ export class ReaderComponent implements OnInit {
   isSettingsOpen = signal<boolean>(false);
   loading = signal<boolean>(true);
 
+  // Phase 7: Offline & Annotations State
+  isDownloaded = signal<boolean>(false);
+  isDownloading = signal<boolean>(false);
+  annotations = signal<Annotation[]>([]);
+  isAnnotationModalOpen = signal<boolean>(false);
+  isBookmarksDrawerOpen = signal<boolean>(false);
+  newNoteText = signal<string>('');
+  selectedNoteColor = signal<string>('#f59e0b');
+
   // Preloaded image URLs cache
   private preloadedUrls = new Set<string>();
+
+  // Current page's annotations
+  currentPageAnnotations = computed(() => {
+    const p = this.currentPage();
+    return this.annotations().filter((a) => a.pageNumber === p);
+  });
 
   ngOnInit() {
     this.loadStoredPreferences();
@@ -47,6 +68,8 @@ export class ReaderComponent implements OnInit {
 
       if (issueId) {
         this.loadIssue(issueId, queryPage);
+        this.checkOfflineStatus(issueId);
+        this.loadAnnotations(issueId);
       }
     });
   }
@@ -76,8 +99,22 @@ export class ReaderComponent implements OnInit {
     } catch {}
   }
 
+  async checkOfflineStatus(issueId: number) {
+    const downloaded = await this.offlineService.isDownloaded(issueId);
+    this.isDownloaded.set(downloaded);
+  }
+
+  loadAnnotations(issueId: number) {
+    if (!this.authService.isLoggedIn()) return;
+    this.annotationService.getByIssue(issueId).subscribe({
+      next: (list) => this.annotations.set(list),
+      error: () => {},
+    });
+  }
+
   loadIssue(issueId: number, startPage: number) {
     this.loading.set(true);
+
     this.progressService.getIssue(issueId).subscribe({
       next: (data) => {
         this.issue.set(data);
@@ -86,33 +123,117 @@ export class ReaderComponent implements OnInit {
         this.currentPage.set(Math.min(startPage, Math.max(1, p.length)));
         this.loading.set(false);
 
-        // Preload adjacent pages
         this.preloadAdjacentPages();
         this.syncProgressToBackend();
       },
-      error: (err) => {
-        console.error('Failed to load issue', err);
-        this.loading.set(false);
+      error: async (err) => {
+        console.warn('Network error, checking offline cache...', err);
+        // Attempt to load from offline IndexedDB
+        const offlineData = await this.offlineService.getIssue(issueId);
+        if (offlineData) {
+          const offlinePages: IssuePage[] = offlineData.pages.map((url, idx) => ({
+            pageId: idx + 1,
+            issueId,
+            pageNumber: idx + 1,
+            imageUrl: url,
+            pageType: 'STORY',
+          }));
+          this.issue.set({
+            issueId,
+            comicId: 0,
+            issueNumber: offlineData.issueNumber,
+            title: `${offlineData.comicTitle} (Offline Mode)`,
+            coverImage: offlinePages[0]?.imageUrl || '',
+            totalPages: offlinePages.length,
+            pages: offlinePages,
+          });
+          this.pages.set(offlinePages);
+          this.currentPage.set(1);
+          this.loading.set(false);
+          this.isDownloaded.set(true);
+        } else {
+          this.loading.set(false);
+        }
       },
     });
   }
 
+  async downloadForOffline() {
+    const iss = this.issue();
+    if (!iss || this.isDownloading() || this.isDownloaded()) return;
+
+    this.isDownloading.set(true);
+    try {
+      const pageUrls = this.pages().map((p) => p.imageUrl);
+      await this.offlineService.saveIssue({
+        issueId: iss.issueId,
+        comicTitle: iss.comic?.title || 'Comic Series',
+        issueNumber: iss.issueNumber,
+        downloadDate: new Date().toISOString(),
+        pages: pageUrls,
+      });
+      this.isDownloaded.set(true);
+    } catch (err) {
+      console.error('Failed to download issue for offline', err);
+    } finally {
+      this.isDownloading.set(false);
+    }
+  }
+
+  openAnnotationModal() {
+    this.newNoteText.set('');
+    this.isAnnotationModalOpen.set(true);
+  }
+
+  closeAnnotationModal() {
+    this.isAnnotationModalOpen.set(false);
+  }
+
+  saveAnnotation() {
+    const iss = this.issue();
+    const note = this.newNoteText().trim();
+    if (!iss || !note) return;
+
+    this.annotationService
+      .create(iss.issueId, this.currentPage(), note, this.selectedNoteColor())
+      .subscribe({
+        next: (created) => {
+          this.annotations.update((arr) => [...arr, created]);
+          this.closeAnnotationModal();
+        },
+        error: (err) => console.error('Failed to save bookmark note', err),
+      });
+  }
+
+  deleteAnnotation(annotationId: number) {
+    this.annotationService.delete(annotationId).subscribe({
+      next: () => {
+        this.annotations.update((arr) => arr.filter((a) => a.annotationId !== annotationId));
+      },
+    });
+  }
+
+  toggleBookmarksDrawer() {
+    this.isBookmarksDrawerOpen.set(!this.isBookmarksDrawerOpen());
+  }
+
+  jumpToBookmarkedPage(pageNumber: number) {
+    this.jumpToPage(pageNumber);
+    this.isBookmarksDrawerOpen.set(false);
+  }
+
   // Preloads next and previous pages in browser in-memory cache
   private preloadAdjacentPages() {
-    const p = this.pages();
-    if (!p || p.length === 0) return;
-
     const cur = this.currentPage();
-    const indicesToPreload = [cur + 1, cur + 2, cur + 3, cur - 1].filter(
-      (idx) => idx >= 1 && idx <= this.totalPages,
-    );
+    const all = this.pages();
+    const toPreload = [cur + 1, cur + 2, cur - 1].filter((p) => p >= 1 && p <= all.length);
 
-    indicesToPreload.forEach((pageNum) => {
-      const pageObj = p.find((item) => item.pageNumber === pageNum);
-      if (pageObj && pageObj.imageUrl && !this.preloadedUrls.has(pageObj.imageUrl)) {
+    toPreload.forEach((pNum) => {
+      const targetPage = all.find((p) => p.pageNumber === pNum);
+      if (targetPage && !this.preloadedUrls.has(targetPage.imageUrl)) {
         const img = new Image();
-        img.src = pageObj.imageUrl;
-        this.preloadedUrls.add(pageObj.imageUrl);
+        img.src = targetPage.imageUrl;
+        this.preloadedUrls.add(targetPage.imageUrl);
       }
     });
   }
@@ -121,82 +242,70 @@ export class ReaderComponent implements OnInit {
     return this.pages().length || this.issue()?.totalPages || 1;
   }
 
-  get currentImage(): string {
-    const pageObj = this.pages().find((p) => p.pageNumber === this.currentPage());
-    if (pageObj) return pageObj.imageUrl;
-    if (this.pages().length > 0) return this.pages()[0].imageUrl;
-    return this.issue()?.coverImage || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1000';
+  get currentPageData(): IssuePage | undefined {
+    return this.pages().find((p) => p.pageNumber === this.currentPage());
   }
 
-  // Double-page spread facing pages
-  getDoublePages(): { left: IssuePage | null; right: IssuePage | null; isCover: boolean } {
-    const p = this.pages();
+  get doubleSpreadData(): { left?: IssuePage; right?: IssuePage } {
     const cur = this.currentPage();
-
-    // If Page 1, treat as solo cover in double mode
-    if (cur === 1) {
-      const coverPage = p.find((x) => x.pageNumber === 1) || null;
-      return { left: null, right: coverPage, isCover: true };
-    }
-
-    // Normal facing pair: e.g. pages 2 & 3, 4 & 5
-    const firstPageNum = cur % 2 === 0 ? cur : cur - 1;
-    const pageA = p.find((x) => x.pageNumber === firstPageNum) || null;
-    const pageB = p.find((x) => x.pageNumber === firstPageNum + 1) || null;
+    const all = this.pages();
 
     if (this.direction() === 'rtl') {
-      // In RTL (Manga), first page is on the right, subsequent page is on the left
-      return { left: pageB, right: pageA, isCover: false };
+      return {
+        right: all.find((p) => p.pageNumber === cur),
+        left: all.find((p) => p.pageNumber === cur + 1),
+      };
     } else {
-      // LTR (Western), first page on left, next on right
-      return { left: pageA, right: pageB, isCover: false };
-    }
-  }
-
-  nextPage() {
-    const step = this.readingMode() === 'double' && this.currentPage() > 1 ? 2 : 1;
-    if (this.currentPage() < this.totalPages) {
-      const next = Math.min(this.totalPages, this.currentPage() + step);
-      this.currentPage.set(next);
-      this.preloadAdjacentPages();
-      this.syncProgressToBackend();
+      return {
+        left: all.find((p) => p.pageNumber === cur),
+        right: all.find((p) => p.pageNumber === cur + 1),
+      };
     }
   }
 
   prevPage() {
-    const step = this.readingMode() === 'double' && this.currentPage() > 2 ? 2 : 1;
+    const step = this.readingMode() === 'double' ? 2 : 1;
     if (this.currentPage() > 1) {
-      const prev = Math.max(1, this.currentPage() - step);
-      this.currentPage.set(prev);
+      this.currentPage.update((p) => Math.max(1, p - step));
       this.preloadAdjacentPages();
       this.syncProgressToBackend();
     }
   }
 
-  jumpToPage(page: number) {
-    this.currentPage.set(Math.max(1, Math.min(page, this.totalPages)));
+  nextPage() {
+    const step = this.readingMode() === 'double' ? 2 : 1;
+    if (this.currentPage() < this.totalPages) {
+      this.currentPage.update((p) => Math.min(this.totalPages, p + step));
+      this.preloadAdjacentPages();
+      this.syncProgressToBackend();
+    }
+  }
+
+  jumpToPage(pageNum: number) {
+    const clamped = Math.max(1, Math.min(this.totalPages, pageNum));
+    this.currentPage.set(clamped);
     this.preloadAdjacentPages();
     this.syncProgressToBackend();
   }
 
-  syncProgressToBackend() {
+  private syncProgressToBackend() {
     const iss = this.issue();
     if (!iss) return;
 
-    const percent = Math.min(100, Math.round((this.currentPage() / this.totalPages) * 100));
+    const percent = Math.round((this.currentPage() / this.totalPages) * 100);
     this.syncedPercent.set(percent);
 
-    const userId = this.authService.currentUser()?.userId || 2;
+    if (!this.authService.isLoggedIn()) return;
 
     this.progressService
       .syncProgress({
-        userId,
         comicId: iss.comicId,
         issueId: iss.issueId,
         pageNumber: this.currentPage(),
       })
       .subscribe({
-        error: (err) => console.error('Error syncing progress', err),
+        next: () => {},
+        error: (err: any) => console.warn('Could not auto-sync reader progress', err),
       });
   }
 
