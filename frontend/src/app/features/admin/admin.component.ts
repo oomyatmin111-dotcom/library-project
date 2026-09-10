@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AdminService } from '../../core/services/admin.service';
+import { AdminService, AuditLogItem } from '../../core/services/admin.service';
 import { ComicService } from '../../core/services/comic.service';
 import { CirculationService, BorrowingLoan, CirculationFine, BookReservation } from '../../core/services/circulation.service';
 import { TranslationService } from '../../core/services/translation.service';
@@ -24,8 +24,29 @@ export class AdminComponent implements OnInit {
   stats = signal<any>(null);
   analytics = signal<any>(null);
   comics = signal<Comic[]>([]);
-  activeTab = signal<'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics'>('dashboard');
+  activeTab = signal<'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics' | 'audit'>('dashboard');
   exportingCsv = signal<boolean>(false);
+
+  // Phase 10: Audit Log State
+  auditLogs = signal<AuditLogItem[]>([]);
+  auditSearch = signal<string>('');
+  auditActionFilter = signal<string>('ALL');
+
+  filteredAuditLogs = computed(() => {
+    const q = this.auditSearch().toLowerCase().trim();
+    const actionFilter = this.auditActionFilter();
+
+    return this.auditLogs().filter((log) => {
+      const matchesFilter = actionFilter === 'ALL' || log.action === actionFilter || log.entityType === actionFilter;
+      const matchesSearch =
+        !q ||
+        log.action.toLowerCase().includes(q) ||
+        log.entityType.toLowerCase().includes(q) ||
+        log.details.toLowerCase().includes(q) ||
+        (log.user?.email && log.user.email.toLowerCase().includes(q));
+      return matchesFilter && matchesSearch;
+    });
+  });
 
   // Circulation Desk Signals
   loans = signal<BorrowingLoan[]>([]);
@@ -316,13 +337,22 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics') {
+  loadAuditLogs() {
+    this.adminService.getAuditLogs().subscribe({
+      next: (logs) => this.auditLogs.set(logs),
+      error: (err) => console.error('Failed to load audit logs', err),
+    });
+  }
+
+  setTab(tab: 'dashboard' | 'comics' | 'add-comic' | 'bulk-upload' | 'circulation' | 'fines' | 'reservations' | 'analytics' | 'audit') {
     this.activeTab.set(tab);
     this.uploadedIssueId.set(null);
     if (tab === 'circulation' || tab === 'fines' || tab === 'reservations') {
       this.loadCirculationData();
     } else if (tab === 'analytics') {
       this.loadAnalytics();
+    } else if (tab === 'audit') {
+      this.loadAuditLogs();
     }
   }
 }

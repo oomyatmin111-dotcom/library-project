@@ -66,6 +66,13 @@
         >
           📈 {{ translationService.t('admin.analytics') }}
         </button>
+        <button
+          class="adm-tab btn-highlight-purple"
+          [class.active]="activeTab() === 'audit'"
+          (click)="setTab('audit')"
+        >
+          🛡️ Audit Trail & Logs
+        </button>
       </div>
     </div>
 
@@ -882,6 +889,94 @@
             <p>Loading real-time executive analytics data...</p>
           </div>
         }
+      </div>
+    }
+
+    <!-- TAB 9: PHASE 10 AUDIT TRAIL & LOGS -->
+    @if (activeTab() === 'audit') {
+      <div class="adm-section">
+        <div class="circ-header">
+          <div>
+            <h2>🛡️ Platform Security & Financial Audit Trail</h2>
+            <p>Real-time audit log of wallet transactions, VIP upgrades, chapter unlocks, and system administration activities.</p>
+          </div>
+          <button class="btn-refresh" (click)="loadAuditLogs()">
+            🔄 Refresh Logs
+          </button>
+        </div>
+
+        <!-- Filter and Search Bar -->
+        <div class="circ-toolbar">
+          <div class="search-box">
+            <span>🔍</span>
+            <input
+              type="text"
+              [ngModel]="auditSearch()"
+              (ngModelChange)="auditSearch.set($event)"
+              placeholder="Filter by action, entity, user email, details..."
+            />
+          </div>
+
+          <div class="filter-group">
+            <label>Filter Action/Entity:</label>
+            <select [ngModel]="auditActionFilter()" (ngModelChange)="auditActionFilter.set($event)">
+              <option value="ALL">All Actions & Entities</option>
+              <option value="COIN_TOPUP">Coin Top-ups</option>
+              <option value="UPGRADE_SUBSCRIPTION">VIP Upgrades</option>
+              <option value="UNLOCK_CHAPTER">Chapter Unlocks</option>
+              <option value="WALLET">Wallet Entity</option>
+              <option value="MEMBERSHIP">Membership Entity</option>
+              <option value="ISSUE">Issue Entity</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audit Table -->
+        <div class="table-responsive">
+          <table class="data-table audit-table">
+            <thead>
+              <tr>
+                <th>Log ID</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>User / Operator</th>
+                <th>IP Address</th>
+                <th>Details & Metadata</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of filteredAuditLogs(); track log.logId) {
+                <tr>
+                  <td class="log-id">#{{ log.logId }}</td>
+                  <td class="log-time">{{ log.createdAt | date:'medium' }}</td>
+                  <td>
+                    <span class="action-pill" [attr.data-action]="log.action">
+                      {{ log.action }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="entity-pill">{{ log.entityType }}</span>
+                  </td>
+                  <td>
+                    <div class="user-cell">
+                      <strong>{{ log.user ? (log.user.firstName + ' ' + (log.user.lastName || '')) : 'System / Guest' }}</strong>
+                      <small *ngIf="log.user?.email">{{ log.user?.email }}</small>
+                    </div>
+                  </td>
+                  <td class="ip-cell">{{ log.ipAddress }}</td>
+                  <td class="details-cell">{{ log.details }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="empty-hint">
+                    No audit records matching criteria.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     }
   </div>

@@ -6,6 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ProgressService } from '../../core/services/progress.service';
 import { TranslationService } from '../../core/services/translation.service';
+import { WalletService } from '../../core/services/wallet.service';
 import { UserProfile, BorrowingItem, UserFavoriteItem } from '../../core/models/user.model';
 import { ReadingProgress, ReadingHistory } from '../../core/models/comic.model';
 
@@ -27,11 +28,14 @@ export interface AchievementBadge {
 export class ProfileComponent implements OnInit {
   authService = inject(AuthService);
   translationService = inject(TranslationService);
+  walletService = inject(WalletService);
   private userProfileService = inject(UserProfileService);
   private progressService = inject(ProgressService);
   private router = inject(Router);
 
-  activeTab = signal<'reading' | 'loans' | 'favorites' | 'settings'>('reading');
+  activeTab = signal<'reading' | 'loans' | 'favorites' | 'settings' | 'wallet'>('reading');
+  walletNotice = signal<string>('');
+  topupLoading = signal<boolean>(false);
   loading = signal<boolean>(true);
 
   profile = signal<UserProfile | null>(null);
@@ -110,10 +114,42 @@ export class ProfileComponent implements OnInit {
     this.userProfileService.getFavorites().subscribe({
       next: (favs) => this.favorites.set(favs),
     });
+
+    this.walletService.getWallet().subscribe();
   }
 
-  setTab(tab: 'reading' | 'loans' | 'favorites' | 'settings') {
+  setTab(tab: 'reading' | 'loans' | 'favorites' | 'settings' | 'wallet') {
     this.activeTab.set(tab);
+  }
+
+  onTopup(amount: number) {
+    this.topupLoading.set(true);
+    this.walletNotice.set('');
+    this.walletService.topup(amount, `Top-up ${amount} coins pack`).subscribe({
+      next: (w) => {
+        this.topupLoading.set(false);
+        this.walletNotice.set(`🎉 Successfully credited +${amount} coins! Balance: ${w.coinsBalance} coins.`);
+      },
+      error: () => {
+        this.topupLoading.set(false);
+        this.walletNotice.set('❌ Top-up failed. Please try again.');
+      },
+    });
+  }
+
+  onUpgradeTier(tier: 'GOLD_VIP' | 'PLATINUM_VIP') {
+    this.topupLoading.set(true);
+    this.walletNotice.set('');
+    this.walletService.upgradeTier(tier).subscribe({
+      next: (w) => {
+        this.topupLoading.set(false);
+        this.walletNotice.set(`👑 Congratulations! Upgraded to ${tier}. Enjoy your VIP perks & bonus coins!`);
+      },
+      error: () => {
+        this.topupLoading.set(false);
+        this.walletNotice.set('❌ Upgrade failed. Please try again.');
+      },
+    });
   }
 
   onSaveProfile() {

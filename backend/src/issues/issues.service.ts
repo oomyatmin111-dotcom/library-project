@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import JSZip from 'jszip';
 import { Issue } from '../entities/issue.entity.js';
 import { IssuePage } from '../entities/issue-page.entity.js';
 
@@ -86,5 +87,57 @@ export class IssuesService {
     }
 
     return this.findByIssueId(savedIssue.issueId);
+  }
+
+  async exportCbz(issueId: number): Promise<{ filename: string; buffer: Buffer }> {
+    const issue = await this.findByIssueId(issueId);
+    const comicTitle = issue.comic?.title || 'Comic';
+    const cleanComic = comicTitle.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${cleanComic}_#${issue.issueNumber}.cbz`;
+
+    const zip = new JSZip();
+
+    // ComicInfo.xml metadata
+    const xml = `<?xml version="1.0" encoding="utf-8"?>
+<ComicInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Title>${issue.title || `Issue #${issue.issueNumber}`}</Title>
+  <Series>${comicTitle}</Series>
+  <Number>${issue.issueNumber}</Number>
+  <PageCount>${(issue.pages || []).length}</PageCount>
+  <ScanInformation>NexusComics Digital CBZ Archive</ScanInformation>
+</ComicInfo>`;
+    zip.file('ComicInfo.xml', xml);
+
+    for (let i = 0; i < (issue.pages || []).length; i++) {
+      const page = issue.pages[i];
+      const pageIdx = String(i + 1).padStart(3, '0');
+      let pageSaved = false;
+
+      if (page.imageUrl && page.imageUrl.startsWith('http')) {
+        try {
+          const res = await fetch(page.imageUrl, { signal: AbortSignal.timeout(5000) });
+          if (res.ok) {
+            const arr = await res.arrayBuffer();
+            zip.file(`page_${pageIdx}.jpg`, Buffer.from(arr));
+            pageSaved = true;
+          }
+        } catch {
+          // fallback
+        }
+      }
+
+      if (!pageSaved) {
+        const svgFallback = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200"><rect width="800" height="1200" fill="#181824"/><text x="400" y="550" fill="#ffb400" font-size="32" font-weight="bold" text-anchor="middle" font-family="sans-serif">${comicTitle}</text><text x="400" y="620" fill="#e0e0e0" font-size="24" text-anchor="middle" font-family="sans-serif">Chapter ${issue.issueNumber} - Page ${i + 1}</text></svg>`;
+        zip.file(`page_${pageIdx}.svg`, svgFallback);
+      }
+    }
+
+    const buffer = await zip.generateAsync({
+      type: 'nodebuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    });
+
+    return { filename, buffer };
   }
 }

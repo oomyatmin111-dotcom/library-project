@@ -15,8 +15,16 @@
         </div>
 
         <div class="info-col">
-          <div class="role-badge" [attr.data-role]="profile()?.roleName">
-            {{ profile()?.roleName }}
+          <div class="badge-row">
+            <span class="role-badge" [attr.data-role]="profile()?.roleName">
+              {{ profile()?.roleName }}
+            </span>
+            <span class="vip-badge" [attr.data-tier]="walletService.tier()">
+              {{ walletService.tier() === 'PLATINUM_VIP' ? '💎 PLATINUM VIP' : (walletService.tier() === 'GOLD_VIP' ? '👑 GOLD VIP' : 'FREE PASS') }}
+            </span>
+            <span class="coins-badge" (click)="setTab('wallet')" title="Click to open Coin Wallet">
+              🪙 {{ walletService.coins() }} Coins
+            </span>
           </div>
           <h1 class="user-fullname">{{ profile()?.name || 'Member' }}</h1>
           <p class="user-email">✉️ {{ profile()?.email }}</p>
@@ -105,6 +113,13 @@
         (click)="setTab('settings')"
       >
         ⚙️ Settings & Password
+      </button>
+      <button
+        class="tab-link vip-tab-btn"
+        [class.active]="activeTab() === 'wallet'"
+        (click)="setTab('wallet')"
+      >
+        🪙 VIP Pass & Wallet ({{ walletService.coins() }})
       </button>
     </div>
 
@@ -358,6 +373,168 @@
           </form>
         </div>
       </div>
+    </div>
+
+    <!-- Tab Content 5: Phase 10 VIP Pass & Coin Wallet -->
+    <div *ngIf="activeTab() === 'wallet'" class="tab-panel wallet-panel">
+      <div *ngIf="walletNotice()" class="alert-banner" [class.success]="walletNotice().startsWith('🎉') || walletNotice().startsWith('👑')" [class.danger]="walletNotice().startsWith('❌')">
+        {{ walletNotice() }}
+      </div>
+
+      <!-- Membership Tier Cards -->
+      <section class="panel-section">
+        <div class="tier-header">
+          <h2 class="section-title">👑 VIP Membership Passes</h2>
+          <span class="current-tier-pill">Current Tier: <strong>{{ walletService.tier() }}</strong></span>
+        </div>
+
+        <div class="tier-grid">
+          <!-- FREE Tier -->
+          <div class="tier-card" [class.active-tier]="walletService.tier() === 'FREE'">
+            <div class="tier-top">
+              <span class="tier-icon">🌱</span>
+              <h3 class="tier-name">Free Explorer</h3>
+              <div class="tier-price">$0 <span class="tier-period">/ forever</span></div>
+            </div>
+            <ul class="tier-perks">
+              <li>✓ Access to open-catalog comics</li>
+              <li>✓ Basic digital reader</li>
+              <li>✓ Borrow library physical books</li>
+              <li>✗ Ad-supported reading</li>
+              <li>✗ Standard chapter unlock cost (20 coins)</li>
+            </ul>
+            <div class="tier-cta">
+              <span *ngIf="walletService.tier() === 'FREE'" class="current-label">Current Plan</span>
+            </div>
+          </div>
+
+          <!-- GOLD VIP -->
+          <div class="tier-card gold-vip" [class.active-tier]="walletService.tier() === 'GOLD_VIP'">
+            <div class="tier-badge-ribbon">POPULAR</div>
+            <div class="tier-top">
+              <span class="tier-icon">👑</span>
+              <h3 class="tier-name">Gold VIP Pass</h3>
+              <div class="tier-price">$4.99 <span class="tier-period">/ month</span></div>
+            </div>
+            <ul class="tier-perks">
+              <li>✓ <strong>150 Bonus Coins</strong> credited instantly</li>
+              <li>✓ <strong>50% Coin Discount</strong> on chapter unlocks</li>
+              <li>✓ Ad-free experience</li>
+              <li>✓ Exclusive Gold VIP profile badge</li>
+              <li>✓ Priority book loan reservations</li>
+            </ul>
+            <div class="tier-cta">
+              <span *ngIf="walletService.tier() === 'GOLD_VIP'" class="current-label">Active Plan ✓</span>
+              <button *ngIf="walletService.tier() !== 'GOLD_VIP'" class="tier-btn gold-btn" [disabled]="topupLoading()" (click)="onUpgradeTier('GOLD_VIP')">
+                Upgrade to Gold ($4.99)
+              </button>
+            </div>
+          </div>
+
+          <!-- PLATINUM VIP -->
+          <div class="tier-card platinum-vip" [class.active-tier]="walletService.tier() === 'PLATINUM_VIP'">
+            <div class="tier-badge-ribbon">ULTIMATE</div>
+            <div class="tier-top">
+              <span class="tier-icon">💎</span>
+              <h3 class="tier-name">Platinum VIP Pass</h3>
+              <div class="tier-price">$9.99 <span class="tier-period">/ month</span></div>
+            </div>
+            <ul class="tier-perks">
+              <li>✓ <strong>300 Bonus Coins</strong> credited instantly</li>
+              <li>✓ <strong>Unlimited Chapter Unlocks</strong> (Free)</li>
+              <li>✓ <strong>CBZ Archive Exporter</strong> for offline storage</li>
+              <li>✓ AI Comic Lore Assistant unlimited queries</li>
+              <li>✓ Audio TTS Narrator continuous playback</li>
+            </ul>
+            <div class="tier-cta">
+              <span *ngIf="walletService.tier() === 'PLATINUM_VIP'" class="current-label">Active Plan ✓</span>
+              <button *ngIf="walletService.tier() !== 'PLATINUM_VIP'" class="tier-btn plat-btn" [disabled]="topupLoading()" (click)="onUpgradeTier('PLATINUM_VIP')">
+                Upgrade to Platinum ($9.99)
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Coin Wallet Store -->
+      <section class="panel-section coin-store-section">
+        <div class="coin-store-header">
+          <div>
+            <h2 class="section-title">🪙 Coin Wallet & Instant Top-up</h2>
+            <p class="section-subtitle">Use coins to unlock premium issues and support comic creators.</p>
+          </div>
+          <div class="wallet-balance-card">
+            <span class="balance-label">Your Coin Balance</span>
+            <span class="balance-amount">🪙 {{ walletService.coins() }}</span>
+          </div>
+        </div>
+
+        <div class="coin-packs-grid">
+          <div class="coin-pack-card" (click)="onTopup(50)">
+            <span class="pack-coins">🪙 50 Coins</span>
+            <span class="pack-title">Starter Pouch</span>
+            <button class="pack-btn" [disabled]="topupLoading()">$1.99</button>
+          </div>
+
+          <div class="coin-pack-card featured" (click)="onTopup(150)">
+            <span class="pack-ribbon">+20% Extra</span>
+            <span class="pack-coins">🪙 150 Coins</span>
+            <span class="pack-title">Reader Cache</span>
+            <button class="pack-btn" [disabled]="topupLoading()">$4.99</button>
+          </div>
+
+          <div class="coin-pack-card" (click)="onTopup(500)">
+            <span class="pack-ribbon">+40% Extra</span>
+            <span class="pack-coins">🪙 500 Coins</span>
+            <span class="pack-title">Hero Chest</span>
+            <button class="pack-btn" [disabled]="topupLoading()">$12.99</button>
+          </div>
+
+          <div class="coin-pack-card" (click)="onTopup(1200)">
+            <span class="pack-ribbon">Best Value</span>
+            <span class="pack-coins">🪙 1,200 Coins</span>
+            <span class="pack-title">Collector Vault</span>
+            <button class="pack-btn" [disabled]="topupLoading()">$24.99</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transaction Ledger History -->
+      <section class="panel-section">
+        <h2 class="section-title">📜 Wallet Transaction Ledger</h2>
+        <div class="table-responsive" *ngIf="walletService.wallet()?.transactions?.length; else noTx">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tx of walletService.wallet()?.transactions">
+                <td>{{ tx.createdAt | date:'medium' }}</td>
+                <td>
+                  <span class="status-pill" [class.green]="tx.type === 'CREDIT'" [class.red]="tx.type === 'DEBIT'">
+                    {{ tx.type }}
+                  </span>
+                </td>
+                <td class="tx-amount" [class.positive]="tx.type === 'CREDIT'" [class.negative]="tx.type === 'DEBIT'">
+                  {{ tx.type === 'CREDIT' ? '+' : '-' }}{{ tx.amount }} Coins
+                </td>
+                <td>{{ tx.description || 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <ng-template #noTx>
+          <div class="empty-state">
+            <span class="empty-icon">🪙</span>
+            <p>No transactions yet. Top-up coins to start unlocking premium chapters!</p>
+          </div>
+        </ng-template>
+      </section>
     </div>
   </div>
 </div>

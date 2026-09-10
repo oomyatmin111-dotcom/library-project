@@ -1052,3 +1052,98 @@
   color: #94a3b8;
 }
 
+/* Phase 10: Audit Trail & Logs */
+.btn-highlight-purple {
+  background: rgba(168, 85, 247, 0.15) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+.btn-highlight-purple.active {
+  background: #a855f7 !important;
+  color: #fff !important;
+}
+
+.audit-table {
+  font-size: 0.82rem;
+}
+
+.log-id {
+  font-family: monospace;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.log-time {
+  white-space: nowrap;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.action-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+.action-pill[data-action="COIN_TOPUP"] {
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.action-pill[data-action="UPGRADE_SUBSCRIPTION"] {
+  background: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}
+
+.action-pill[data-action="UNLOCK_CHAPTER"] {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.entity-pill {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #0f172a;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+}
+
+.user-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-cell strong {
+  color: #f1f5f9;
+}
+
+.user-cell small {
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.ip-cell {
+  font-family: monospace;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.details-cell {
+  color: #cbd5e1;
+  max-width: 320px;
+  word-break: break-word;
+}
+
+

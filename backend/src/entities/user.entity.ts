@@ -35,6 +35,14 @@ export class User {
   @Column({ name: 'max_borrow_limit', default: 5 })
   maxBorrowLimit: number;
 
+  @Column({
+    name: 'membership_tier',
+    type: 'enum',
+    enum: ['FREE', 'GOLD_VIP', 'PLATINUM_VIP'],
+    default: 'FREE',
+  })
+  membershipTier: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -50,5 +50,25 @@ export class AdminService {
       responseType: 'blob',
     });
   }
+
+  getAuditLogs(): Observable<AuditLogItem[]> {
+    return this.http.get<AuditLogItem[]>(`${this.apiUrl}/admin/audit-logs`);
+  }
+}
+
+export interface AuditLogItem {
+  logId: number;
+  userId: number | null;
+  action: string;
+  entityType: string;
+  details: string;
+  ipAddress: string;
+  createdAt: string;
+  user?: {
+    userId: number;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
 }
 

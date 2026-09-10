@@ -30,4 +30,9 @@ export class AdminController {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return res.send(csvContent);
   }
+
+  @Get('audit-logs')
+  async getAuditLogs() {
+    return this.adminService.getAuditLogs();
+  }
 }

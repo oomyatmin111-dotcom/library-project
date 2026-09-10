@@ -18,6 +18,9 @@ import { Review } from './entities/review.entity.js';
 import { Annotation } from './entities/annotation.entity.js';
 import { Notification } from './entities/notification.entity.js';
 import { AiConversation } from './entities/ai-conversation.entity.js';
+import { Wallet } from './entities/wallet.entity.js';
+import { WalletTransaction } from './entities/wallet-transaction.entity.js';
+import { AuditLog } from './entities/audit-log.entity.js';
 
 import { AuthModule } from './auth/auth.module.js';
 import { ComicsModule } from './comics/comics.module.js';
@@ -30,6 +33,7 @@ import { ReviewsModule } from './reviews/reviews.module.js';
 import { AnnotationsModule } from './annotations/annotations.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { AiModule } from './ai/ai.module.js';
+import { WalletModule } from './wallet/wallet.module.js';
 
 @Module({
   imports: [
@@ -59,6 +63,9 @@ import { AiModule } from './ai/ai.module.js';
         Annotation,
         Notification,
         AiConversation,
+        Wallet,
+        WalletTransaction,
+        AuditLog,
       ],
       synchronize: false,
       logging: false,
@@ -74,6 +81,7 @@ import { AiModule } from './ai/ai.module.js';
     AnnotationsModule,
     NotificationsModule,
     AiModule,
+    WalletModule,
   ],
 })
 export class AppModule {}

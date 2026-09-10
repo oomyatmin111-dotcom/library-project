@@ -10,6 +10,7 @@ import { Borrowing } from '../entities/borrowing.entity.js';
 import { Fine } from '../entities/fine.entity.js';
 import { Book } from '../entities/book.entity.js';
 import { Reservation } from '../entities/reservation.entity.js';
+import { AuditLog } from '../entities/audit-log.entity.js';
 
 @Injectable()
 export class AdminService {
@@ -32,6 +33,8 @@ export class AdminService {
     private readonly bookRepo: Repository<Book>,
     @InjectRepository(Reservation)
     private readonly reservationRepo: Repository<Reservation>,
+    @InjectRepository(AuditLog)
+    private readonly auditRepo: Repository<AuditLog>,
   ) {}
 
   async getDashboardStats() {
@@ -215,5 +218,30 @@ export class AdminService {
     });
 
     return [headers.join(','), ...rows].join('\n');
+  }
+
+  async getAuditLogs(limit = 50) {
+    return this.auditRepo.find({
+      relations: { user: true },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
+
+  async logAction(
+    userId: number | null,
+    action: string,
+    entityType: string,
+    details: string,
+    ipAddress: string = '127.0.0.1',
+  ) {
+    const log = this.auditRepo.create({
+      userId,
+      action,
+      entityType,
+      details,
+      ipAddress,
+    });
+    return this.auditRepo.save(log);
   }
 }

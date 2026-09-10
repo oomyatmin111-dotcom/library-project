@@ -10,6 +10,7 @@ import { Fine } from '../entities/fine.entity.js';
 import { Book } from '../entities/book.entity.js';
 import { BookCopy } from '../entities/book-copy.entity.js';
 import { Reservation } from '../entities/reservation.entity.js';
+import { AuditLog } from '../entities/audit-log.entity.js';
 import { AdminService } from './admin.service.js';
 import { AdminController } from './admin.controller.js';
 import { AuthModule } from '../auth/auth.module.js';
@@ -27,6 +28,7 @@ import { AuthModule } from '../auth/auth.module.js';
       Book,
       BookCopy,
       Reservation,
+      AuditLog,
     ]),
     AuthModule,
   ],

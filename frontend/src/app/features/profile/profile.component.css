@@ -870,3 +870,432 @@
   line-height: 1.25;
 }
 
+/* Phase 10: VIP & Coin Wallet */
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.vip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vip-badge[data-tier="PLATINUM_VIP"] {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(236, 72, 153, 0.45);
+}
+
+.vip-badge[data-tier="GOLD_VIP"] {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.vip-badge[data-tier="FREE"] {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid #334155;
+}
+
+.coins-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(234, 179, 8, 0.15);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coins-badge:hover {
+  background: rgba(234, 179, 8, 0.25);
+  transform: scale(1.03);
+}
+
+.vip-tab-btn {
+  background: linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(236, 72, 153, 0.15)) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(234, 179, 8, 0.4) !important;
+}
+
+.wallet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.current-tier-pill {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  background: #0f172a;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+}
+
+.current-tier-pill strong {
+  color: #38bdf8;
+}
+
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.tier-card {
+  position: relative;
+  background: #0d121f;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s;
+}
+
+.tier-card:hover {
+  transform: translateY(-4px);
+  border-color: #334155;
+}
+
+.tier-card.active-tier {
+  border-color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+}
+
+.tier-card.gold-vip {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.tier-card.gold-vip.active-tier {
+  border-color: #f59e0b;
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.25);
+}
+
+.tier-card.platinum-vip {
+  border-color: rgba(236, 72, 153, 0.4);
+}
+
+.tier-card.platinum-vip.active-tier {
+  border-color: #ec4899;
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.25);
+}
+
+.tier-badge-ribbon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.05em;
+  background: #f59e0b;
+  color: #000;
+}
+
+.tier-card.platinum-vip .tier-badge-ribbon {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+}
+
+.tier-top {
+  margin-bottom: 1.25rem;
+}
+
+.tier-icon {
+  font-size: 2.2rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.tier-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+}
+
+.tier-price {
+  font-size: 1.85rem;
+  font-weight: 900;
+  color: #38bdf8;
+}
+
+.tier-card.gold-vip .tier-price {
+  color: #f59e0b;
+}
+
+.tier-card.platinum-vip .tier-price {
+  color: #ec4899;
+}
+
+.tier-period {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.tier-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.tier-cta {
+  margin-top: auto;
+}
+
+.current-label {
+  display: block;
+  text-align: center;
+  padding: 0.65rem;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.tier-card.gold-vip .current-label {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+.tier-card.platinum-vip .current-label {
+  background: rgba(236, 72, 153, 0.1);
+  color: #ec4899;
+  border-color: #ec4899;
+}
+
+.tier-btn {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tier-btn.gold-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+.tier-btn.gold-btn:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35);
+}
+
+.tier-btn.plat-btn {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: #fff;
+}
+
+.tier-btn.plat-btn:hover {
+  background: linear-gradient(135deg, #c084fc, #f472b6);
+  box-shadow: 0 4px 15px rgba(236, 72, 153, 0.35);
+}
+
+/* Coin Store */
+.coin-store-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.wallet-balance-card {
+  background: #0f172a;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.balance-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.balance-amount {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #facc15;
+}
+
+.coin-packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+}
+
+.coin-pack-card {
+  position: relative;
+  background: #0e1626;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coin-pack-card:hover {
+  transform: translateY(-3px);
+  border-color: #facc15;
+  box-shadow: 0 6px 20px rgba(234, 179, 8, 0.15);
+}
+
+.coin-pack-card.featured {
+  border-color: rgba(234, 179, 8, 0.5);
+  background: linear-gradient(180deg, rgba(234, 179, 8, 0.08) 0%, #0e1626 100%);
+}
+
+.pack-ribbon {
+  position: absolute;
+  top: -10px;
+  background: #facc15;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.pack-coins {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #facc15;
+  margin-bottom: 0.25rem;
+}
+
+.pack-title {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.pack-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #fff;
+  padding: 0.45rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coin-pack-card:hover .pack-btn {
+  background: #facc15;
+  color: #000;
+  border-color: #facc15;
+}
+
+/* Ledger */
+.table-responsive {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  background: #0d121f;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.data-table th {
+  background: #111726;
+  padding: 0.85rem 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  border-bottom: 1px solid #1e293b;
+}
+
+.data-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.status-pill.green {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.status-pill.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.tx-amount {
+  font-weight: 800;
+}
+
+.tx-amount.positive {
+  color: #22c55e;
+}
+
+.tx-amount.negative {
+  color: #ef4444;
+}
+
+

@@ -9,6 +9,7 @@ export interface User {
   membershipNo: string;
   phone?: string | null;
   status?: string;
+  membershipTier?: 'FREE' | 'GOLD_VIP' | 'PLATINUM_VIP';
   createdAt?: string;
 }
 

@@ -35,6 +35,15 @@
           {{ isDownloaded() ? '✓ Offline Ready' : (isDownloading() ? '⏳ Saving...' : '📥 Download') }}
         </button>
 
+        <!-- Phase 10: CBZ Export Button -->
+        <button
+          class="cbz-btn"
+          (click)="exportCbz()"
+          title="Export chapter as .CBZ archive for offline comic readers"
+        >
+          📦 CBZ
+        </button>
+
         <!-- Bookmark / Note Button (Logged In) -->
         <button
           *ngIf="authService.isLoggedIn()"

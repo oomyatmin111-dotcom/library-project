@@ -406,4 +406,10 @@ export class ReaderComponent implements OnInit {
       this.toggleFullscreen();
     }
   }
+
+  exportCbz() {
+    const iss = this.issue();
+    if (!iss?.issueId) return;
+    window.open(`http://localhost:3000/api/issues/${iss.issueId}/export-cbz`, '_blank');
+  }
 }
