@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Easy Job - Project & Meeting Management Suite</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Padauk:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-logo">EJ</div>
+      <div class="brand-text">
+        <h1>My Easy Job</h1>
+        <p>Business IT Solution — Project & Meeting Suite</p>
+      </div>
+    </div>
+    <div class="nav-badges">
+      <div class="kpi-chip danger" id="kpi-overdue-chip">
+        <span class="dot"></span>
+        <span id="kpi-overdue-count">0</span> Overdue
+      </div>
+      <div class="kpi-chip warning" id="kpi-imminent-chip">
+        <span class="dot"></span>
+        <span id="kpi-imminent-count">0</span> Imminent (<3d)
+      </div>
+      <div class="kpi-chip info" id="kpi-start-chip">
+        <span class="dot"></span>
+        <span id="kpi-start-count">0</span> Starting Soon
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="tab-minutes">
+        <span class="tab-icon">🎙️</span> အစည်းအဝေး မှတ်တမ်း (Meeting Minutes)
+      </button>
+      <button class="tab-btn" data-tab="tab-reports">
+        <span class="tab-icon">📊</span> ပရောဂျက် အစီရင်ခံစာ (Project Reports)
+      </button>
+      <button class="tab-btn" data-tab="tab-warnings">
+        <span class="tab-icon">⏰</span> Start Date & Deadline Warnings
+      </button>
+      <button class="tab-btn" data-tab="tab-settings">
+        <span class="tab-icon">⚙️</span> စနစ် ဆက်တင်များ (Settings)
+      </button>
+    </nav>
+
+    <!-- TAB 1: MEETING MINUTES -->
+    <section id="tab-minutes" class="tab-content active">
+      <div class="grid-2col">
+        <!-- Input Form -->
+        <div class="card">
+          <div class="card-header">
+            <h2>🎙️ Video Transcription & PDF Generation</h2>
+            <p>ဗီဒီယို/အသံဖိုင် တင်၍ Gemini AI ဖြင့် မှတ်တမ်းယူပြီး PDF ထုတ်ယူခြင်း</p>
+          </div>
+          <form id="transcribe-form">
+            <div class="form-group">
+              <label>ပရောဂျက် အမည် (Project Name)</label>
+              <input type="text" id="minute-project" placeholder="e.g. Oo Ko - LMS" value="Oo Ko - LMS">
+            </div>
+
+            <div class="form-group">
+              <label>အစည်းအဝေး ပြုလုပ်သည့် နေ့စွဲ (Meeting Date)</label>
+              <input type="text" id="minute-date" placeholder="DD/MM/YYYY" value="02/05/2026">
+            </div>
+
+            <div class="form-group">
+              <label>ဗီဒီယို သို့မဟုတ် အသံဖိုင် (Upload Video/Audio File)</label>
+              <input type="file" id="minute-file" accept="video/*,audio/*">
+              <small class="hint">MP4, MKV, WebM, MP3, WAV, M4A စသည်တို့ upload တင်နိုင်ပါသည်</small>
+            </div>
+
+            <div class="form-group">
+              <label>သို့မဟုတ် အစည်းအဝေး စကားပြော / Note ထည့်သွင်းရန် (Optional Text Notes)</label>
+              <textarea id="minute-text" rows="4" placeholder="အစည်းအဝေးတွင် ဆွေးနွေးခဲ့သည့် အကြောင်းအရာများ ရိုက်ထည့်နိုင်ပါသည်..."></textarea>
+            </div>
+
+            <div class="btn-group">
+              <button type="submit" class="btn btn-primary" id="btn-transcribe">
+                🚀 Transcribe & Generate PDF
+              </button>
+              <button type="button" class="btn btn-secondary" id="btn-quick-sample">
+                📄 Load & Export Sample PDF (Oo Ko - LMS)
+              </button>
+            </div>
+          </form>
+
+          <!-- Loading Indicator -->
+          <div id="minute-loading" class="loading-state hidden">
+            <div class="spinner"></div>
+            <p id="minute-loading-text">Gemini AI ဖြင့် ဗီဒီယိုကို နားထောင်ပြီး အစည်းအဝေး မှတ်တမ်း PDF ဖန်တီးနေပါသည်...</p>
+          </div>
+        </div>
+
+        <!-- Live Result / History -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📄 ထုတ်ယူထားသော အစည်းအဝေး မှတ်တမ်းများ</h2>
+            <p>PDF Format အတိုင်း My Easy Job စာရွက်စာတမ်းများ</p>
+          </div>
+          <div id="minutes-list" class="list-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DAILY WORK REPORT -->
+    <section id="tab-reports" class="tab-content">
+      <div class="grid-2col">
+        <!-- Daily Work Report Generator Form -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📋 DAILY WORK REPORT (အလုပ်လုပ်ငန်း အစီရင်ခံစာ)</h2>
+            <p>နေ့စဉ် အလုပ်တာဝန်များနှင့် အစည်းအဝေးမှတ်တမ်း ချိတ်ဆက်မှု အစီရင်ခံစာ</p>
+          </div>
+          <form id="daily-report-form">
+            <div class="form-row">
+              <div class="form-group col">
+                <label>Name</label>
+                <input type="text" id="dwr-name" value="Myat Min Htet" required>
+              </div>
+              <div class="form-group col">
+                <label>Date</label>
+                <input type="text" id="dwr-date" value="2-10-2026" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col">
+                <label>Department</label>
+                <input type="text" id="dwr-dept" value="Project Team" required>
+              </div>
+              <div class="form-group col">
+                <label>Position</label>
+                <input type="text" id="dwr-position" value="Project Admin" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Report Type</label>
+              <input type="text" id="dwr-type" value="Daily Report" required>
+            </div>
+
+            <hr class="divider">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0;">Work Details</h3>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-add-work-item">➕ Add Project Task</button>
+            </div>
+
+            <!-- Dynamic Work Items Container -->
+            <div id="work-items-container">
+              <!-- Item 1 -->
+              <div class="work-input-item card" style="background: #f8fafc; padding: 14px; margin-bottom: 12px;">
+                <div class="form-group">
+                  <label>1. Project</label>
+                  <input type="text" class="work-proj" value="Oo Ko - LMS" placeholder="e.g. Oo Ko - LMS" required>
+                </div>
+                <div class="form-group">
+                  <label>Task</label>
+                  <input type="text" class="work-task" value="Mobile App UI/UX Revision & Video Server Migration Review" placeholder="Task description..." required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group col">
+                    <label>Status</label>
+                    <select class="work-status">
+                      <option value="Done">Done</option>
+                      <option value="In Progress" selected>In Progress</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Blocked">Blocked</option>
+                    </select>
+                  </div>
+                  <div class="form-group col">
+                    <label>Meeting Minute Reference</label>
+                    <input type="text" class="work-ref" value="Shane ( Meeting Minute )" placeholder="Shane ( Meeting Minute )">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Remark</label>
+                  <input type="text" class="work-remark" value="Meeting discussion points recorded and action items delegated to Dev Team" placeholder="Remark...">
+                </div>
+                <div class="form-group">
+                  <label>Tomorrow Plan</label>
+                  <input type="text" class="work-plan" value="Follow up with client regarding Theme Color and verify Private Video Streaming API" placeholder="Tomorrow plan...">
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button type="submit" class="btn btn-primary" id="btn-generate-daily-report">
+                📄 Generate & Download Daily Report PDF
+              </button>
+              <button type="button" class="btn btn-secondary" id="btn-copy-daily-text">
+                📋 Copy Formatted Text
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Report Preview / Download Link -->
+        <div class="card">
+          <div class="card-header">
+            <h2>📑 အစီရင်ခံစာ အစမ်းကြည့်ရှုခြင်း (Report Preview)</h2>
+            <p>PDF မထုတ်မီ အချက်အလက်များ စစ်ဆေးနိုင်ပါသည်</p>
+          </div>
+          <div id="report-preview-box" class="preview-box">
+            <div class="empty-state">
+              <p>ဘယ်ဘက်ရှိ Form တွင် ဖြည့်သွင်းပြီး "Generate & Download Report PDF" ကို နှိပ်ပါ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DATE WARNINGS & PROJECTS -->
+    <section id="tab-warnings" class="tab-content">
+      <!-- Warning Action Bar -->
+      <div class="action-bar card">
+        <div class="action-info">
+          <h2>⏰ Project Start Date & Deadline Warning Dashboard</h2>
+          <p>ပရောဂျက်များ၏ Start Date နှင့် Deadline များကို အချိန်နှင့်တပြေးညီ စောင့်ကြည့်ပြီး သတိပေးချက် ထုတ်ပေးပါသည်</p>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="btn-open-add-proj">
+            ➕ Add New Project
+          </button>
+          <button class="btn btn-warning" id="btn-dispatch-alerts">
+            🔔 Dispatch Alerts (Telegram/Email)
+          </button>
+        </div>
+      </div>
+
+      <!-- Warning Banners -->
+      <div id="warning-banners-container">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Projects Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2>📁 Projects & Dates Overview</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Project Name</th>
+                <th>Client</th>
+                <th>Start Date</th>
+                <th>Target Deadline</th>
+                <th>Status / Days Left</th>
+                <th>Progress</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="projects-table-body">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SETTINGS -->
+    <section id="tab-settings" class="tab-content">
+      <div class="card" style="max-width: 720px; margin: 0 auto;">
+        <div class="card-header">
+          <h2>⚙️ System & Notification Configurations</h2>
+          <p>Gemini AI API နှင့် Telegram / Email သတိပေးချက် ဆက်တင်များ</p>
+        </div>
+        <form id="settings-form">
+          <div class="form-group">
+            <label>Gemini API Key</label>
+            <input type="password" id="cfg-gemini-key" placeholder="AIzaSy...">
+            <small class="hint">ဗီဒီယို/အသံဖိုင် တိုက်ရိုက် transcribe ပြုလုပ်ရန် Google Gemini API Key ထည့်သွင်းပါ</small>
+          </div>
+
+          <hr class="divider">
+          <h3>📱 Telegram Bot Alert Settings</h3>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label>Telegram Bot Token</label>
+              <input type="text" id="cfg-tg-token" placeholder="123456789:ABCdef...">
+            </div>
+            <div class="form-group col">
+              <label>Telegram Chat ID</label>
+              <input type="text" id="cfg-tg-chat" placeholder="-100123456789 သို့မဟုတ် 987654321">
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-test-tg">
+            🧪 Send Test Telegram Alert
+          </button>
+
+          <hr class="divider">
+          <h3>🌐 Webhook Alert URL</h3>
+          <div class="form-group">
+            <label>Webhook URL (Slack, Discord, Custom)</label>
+            <input type="url" id="cfg-webhook-url" placeholder="https://hooks.slack.com/services/...">
+          </div>
+
+          <hr class="divider">
+          <h3>📧 Email Alert Settings (SMTP)</h3>
+          <div class="form-row">
+            <div class="form-group col">
+              <label>SMTP Server</label>
+              <input type="text" id="cfg-smtp-server" placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-group col">
+              <label>SMTP Port</label>
+              <input type="number" id="cfg-smtp-port" value="587">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col">
+              <label>SMTP Email User</label>
+              <input type="email" id="cfg-smtp-user" placeholder="alerts@myeasyjob.com.mm">
+            </div>
+            <div class="form-group col">
+              <label>SMTP Password</label>
+              <input type="password" id="cfg-smtp-pass" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Recipient Email for Warnings</label>
+            <input type="email" id="cfg-recipient-email" placeholder="pm@myeasyjob.com.mm">
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-save-settings">
+            💾 Save Configuration
+          </button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal: Add / Edit Project -->
+  <div id="project-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-project-title">➕ Add New Project</h3>
+        <button class="modal-close" id="btn-close-modal">&times;</button>
+      </div>
+      <form id="project-form">
+        <input type="hidden" id="proj-edit-mode" value="create">
+        <div class="form-group">
+          <label>Project ID</label>
+          <input type="text" id="proj-id" placeholder="proj-unique-id" required>
+        </div>
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="proj-name" placeholder="e.g. Oo Ko - LMS" required>
+        </div>
+        <div class="form-group">
+          <label>Client</label>
+          <input type="text" id="proj-client" placeholder="e.g. My Easy Job Client">
+        </div>
+        <div class="form-row">
+          <div class="form-group col">
+            <label>Start Date</label>
+            <input type="date" id="proj-start-date" required>
+          </div>
+          <div class="form-group col">
+            <label>Target Deadline</label>
+            <input type="date" id="proj-deadline" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col">
+            <label>Status</label>
+            <select id="proj-status">
+              <option value="Planning">Planning</option>
+              <option value="In Progress" selected>In Progress</option>
+              <option value="Review">Review</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-group col">
+            <label>Progress (%)</label>
+            <input type="number" id="proj-progress" min="0" max="100" value="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="proj-desc" rows="2"></textarea>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">Save Project</button>
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -72,3 +72,10 @@ lerna-debug.log*
 Thumbs.db
 ehthumbs.db
 desktop.ini
+
+
+# Binaries & Service Temp
+cloudflared.exe
+myeasyjob/uploads/*
+!myeasyjob/uploads/.gitkeep
+myeasyjob/data/config.json

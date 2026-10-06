@@ -1,0 +1,101 @@
+[
+  {
+    "id": "mm-lms-001",
+    "meeting_info": {
+      "project": "Oo Ko - LMS",
+      "meeting_type": "Feature Revision / UI Update Discussion",
+      "date": "02/05/2026",
+      "prepared_by": "My Easy Job"
+    },
+    "attendees": [
+      "Ko Oo",
+      "Ayeminn Thu, Su Latt"
+    ],
+    "purpose": [
+      "Mobile App UI/UX Revision Requirements Confirm ပြုလုပ်ရန်",
+      "Subscription / Video / Theme Customization Features Review ပြုလုပ်ရန်",
+      "Additional Dashboard Requirement များ စုစည်းရန်"
+    ],
+    "discussion_points": [
+      "Figma Redesign မပြုလုပ်ဘဲ Existing App တွင် Direct Modification လုပ်ရန်",
+      "Register Flow ကို Step-by-Step Process အဖြစ် ပြောင်းရန်",
+      "Home Page ကို Fixed Layout အဖြစ်ထားရန် (Scrollable မဖြစ်စေရ)",
+      "Home Icon များကို GIF Animation ဖြင့် ပြောင်းရန်",
+      "All Pages တွင် Top Navigation Fixed ထားရန်",
+      "Page တစ်ခုချင်းပြောင်းသည့်အခါ Background Music ပြောင်းပေးရန်",
+      "YouTube Video Hosting မသုံးတော့ဘဲ Private Server Video Hosting သို့ ပြောင်းရန်",
+      "Grade Tab Flow ကို Grade List → Lesson List → Video List → Video Detail Structure ဖြင့် ပြောင်းရန်",
+      "Subscription မရှိသည့် User သည် Locked Video နှိပ်ပါက Subscription Prompt ပေါ်ရန်",
+      "Subscription Purchase တစ်ကြိမ်ပြုလုပ်ပြီးပါက Grade တိုင်း Video Unlock ဖြစ်ရန်",
+      "Dashboard တွင် User Password Change Feature ထည့်ရန်",
+      "Profile Page တွင် Existing Button 4 ခုကို ပိုမိုထင်ရှားအောင် UI Adjust လုပ်ရန်",
+      "Figma ထဲက Video Scroll Behavior အတိုင်း App တွင် သုံးပေးရန်",
+      "Video Player ကို Landscape Mode ဖြင့် View လုပ်နိုင်ရန်",
+      "Video Progress Bar ကို Video Frame အပြင်တွင် ပြသရန်",
+      "Loading Screen တွင် Cartoon Illustration ထည့်ရန်",
+      "App Icons များကို Cartoon Style ပြောင်းရန်",
+      "Theme Color ပြောင်းရန် (Client မှ Color Deliver လုပ်မည်)",
+      "Customize Notification Feature ကို Future Enhancement အဖြစ် ထည့်သွင်းထားရန်"
+    ],
+    "decisions": [
+      "UI/UX Changes များကို Existing App Base ပေါ်တွင် Direct Revise လုပ်မည်",
+      "Video Hosting ကို Private Server Based Streaming သို့ Migrate လုပ်မည်",
+      "Subscription Unlock Logic ကို Content Access Control ဖြင့် Implement လုပ်မည်",
+      "Theme Color Finalization ကို Client Deliver ပြီးမှ Apply လုပ်မည်",
+      "Customize Notification Feature ကို Current Scope မှ Exclude / Future Scope သတ်မှတ်မည်"
+    ],
+    "action_items_grouped": [
+      {
+        "team": "UI/UX Team",
+        "items": [
+          "Home Fixed Layout Update",
+          "Profile Button Visibility Improvement",
+          "Loading / Cartoon Icon Design Update",
+          "Theme Color Apply (After Client Delivery)"
+        ]
+      },
+      {
+        "team": "Dev Team",
+        "items": [
+          "Register Step-by-Step Flow Implement",
+          "GIF Animated Icons Integration",
+          "Background Music Per Page Logic",
+          "Private Video Server Migration",
+          "Fixed Top Navigation Implementation",
+          "Grade → Lesson → Video Flow Update",
+          "Subscription Access Restriction Logic",
+          "One-Time Unlock Logic Implement",
+          "Dashboard Password Change Feature",
+          "Landscape Video Player Update",
+          "External Progress Bar Implementation"
+        ]
+      }
+    ],
+    "issues_risks": [
+      "Background Music Per Page may impact app performance / battery usage",
+      "GIF Animation may increase app size/load time",
+      "Private Video Hosting Requires Server Bandwidth Planning",
+      "Landscape Video Player Customization may require player package modification",
+      "Subscription Unlock Logic needs precise scope clarification per content grouping"
+    ],
+    "pending_clarifications": [
+      {
+        "topic": "Background Music Change Per Page",
+        "sub_items": [
+          "Each page unique music?",
+          "Category-based music?"
+        ]
+      },
+      "Theme Color Final Hex / Design Asset Awaiting from Client"
+    ],
+    "next_meeting": {
+      "agenda": "UI Revision Review Meeting",
+      "date": "မဖော်ပြထားပါ"
+    },
+    "additional_notes": [
+      "Large UI/UX changes without Figma re-design may increase revision complexity during development",
+      "Recommend confirming subscription access rules before implementation to avoid rework"
+    ],
+    "created_at": "2026-05-02"
+  }
+]

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ minute.meeting_info.project }} - အစည်းအဝေး မှတ်တမ်း</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 18mm 18mm 18mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'Myanmar Text', sans-serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      font-family: 'Myanmar Text', 'Pyidaungsu', 'Padauk', 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.7;
+      color: #1e293b;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+    .header-table td {
+      vertical-align: middle;
+      padding: 0;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 24px;
+      border: 3px solid #38bdf8;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+      line-height: 52px;
+    }
+    .company-title {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .company-subtitle {
+      font-size: 11pt;
+      color: #475569;
+      margin-top: 3px;
+      font-weight: 500;
+    }
+    .company-meta {
+      text-align: right;
+      font-size: 9.5pt;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .company-meta a {
+      color: #0284c7;
+      text-decoration: underline;
+    }
+    .header-divider {
+      height: 3px;
+      background: linear-gradient(90deg, #0284c7 0%, #2563eb 50%, #38bdf8 100%);
+      border-radius: 2px;
+      margin: 12px 0 28px 0;
+    }
+    .doc-title {
+      font-size: 24pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 20px 0 22px 0;
+      letter-spacing: -0.5px;
+    }
+    .section-title {
+      font-size: 12.5pt;
+      font-weight: 700;
+      color: #3b5998;
+      margin-top: 22px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid #cbd5e1;
+      margin: 22px 0 16px 0;
+    }
+    ul {
+      margin: 6px 0 14px 0;
+      padding-left: 24px;
+      list-style-type: disc;
+    }
+    li {
+      margin-bottom: 6px;
+      line-height: 1.65;
+    }
+    ul.sub-list {
+      margin-top: 4px;
+      margin-bottom: 6px;
+      padding-left: 22px;
+      list-style-type: circle;
+    }
+    .team-header {
+      font-weight: 600;
+      color: #1e293b;
+      margin-top: 6px;
+      margin-bottom: 4px;
+    }
+    .meta-list {
+      list-style-type: disc;
+      padding-left: 24px;
+    }
+    .meta-list li {
+      margin-bottom: 5px;
+    }
+    .meta-list b {
+      color: #0f172a;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header matching the PDF layout with 'My Easy Job' -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 55%;">
+        <div class="logo-container">
+          <div class="logo-badge">EJ</div>
+          <div>
+            <div class="company-title">My Easy Job</div>
+            <div class="company-subtitle">Business IT Solution</div>
+          </div>
+        </div>
+      </td>
+      <td style="width: 45%;">
+        <div class="company-meta">
+          <div>No.12, Min Nandar Main Road,</div>
+          <div>Dawbon Tsp, Yangon</div>
+          <div>www.myeasyjob.com.mm, info@myeasyjob.com.mm</div>
+          <div>Hotline : +95 9 421 014 055</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="header-divider"></div>
+
+  <!-- Main Title -->
+  <div class="doc-title">အစည်းအဝေး မှတ်တမ်း</div>
+
+  <!-- ၁။ အစည်းအဝေး အချက်အလက် -->
+  <div class="section-title">၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)</div>
+  <ul class="meta-list">
+    <li><b>Project:</b> {{ minute.meeting_info.project }}</li>
+    <li><b>Meeting Type:</b> {{ minute.meeting_info.meeting_type }}</li>
+    <li><b>Date:</b> {{ minute.meeting_info.date }}</li>
+    <li><b>Prepared By:</b> {{ minute.meeting_info.prepared_by or "My Easy Job" }}</li>
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၂။ တက်ရောက်သူများ -->
+  <div class="section-title">၂။ တက်ရောက်သူများ (Attendees)</div>
+  <ul>
+    {% for att in minute.attendees %}
+    <li>{{ att }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၃။ ရည်ရွယ်ချက် -->
+  <div class="section-title">၃။ ရည်ရွယ်ချက် (Purpose)</div>
+  <ul>
+    {% for p in minute.purpose %}
+    <li>{{ p }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၄။ ဆွေးနွေးချက်များ -->
+  <div class="section-title">၄။ ဆွေးနွေးချက်များ (Discussion Points)</div>
+  <ul>
+    {% for dp in minute.discussion_points %}
+    <li>{{ dp }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၅။ ဆုံးဖြတ်ချက်များ -->
+  <div class="section-title">၅။ ဆုံးဖြတ်ချက်များ (Decisions)</div>
+  <ul>
+    {% for d in minute.decisions %}
+    <li>{{ d }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၆။ လုပ်ဆောင်ရန်တာဝန်များ -->
+  <div class="section-title">၆။ လုပ်ဆောင်ရန်တာဝန်များ (Action Items)</div>
+  {% if minute.action_items_grouped %}
+    {% for group in minute.action_items_grouped %}
+      <div class="team-header">• {{ group.team }}</div>
+      <ul class="sub-list">
+        {% for item in group['items'] %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  {% else %}
+    <ul>
+      {% for item in minute.action_items %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <hr class="section-divider">
+
+  <!-- ၇။ ပြဿနာ / အန္တရာယ်များ -->
+  <div class="section-title">၇။ ပြဿနာ / အန္တရာယ်များ (Issues / Risks)</div>
+  <ul>
+    {% for r in minute.issues_risks %}
+    <li>{{ r }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၈။ အတည်ပြုရန်လိုအပ်ချက်များ -->
+  <div class="section-title">၈။ အတည်ပြုရန်လိုအပ်ချက်များ (Pending Clarifications)</div>
+  <ul>
+    {% for pc in minute.pending_clarifications %}
+      {% if pc is string %}
+        <li>{{ pc }}</li>
+      {% else %}
+        <li>{{ pc.topic }}:
+          {% if pc.sub_items %}
+          <ul class="sub-list">
+            {% for sub in pc.sub_items %}
+            <li>{{ sub }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၉။ နောက်အစည်းအဝေး -->
+  <div class="section-title">၉။ နောက်အစည်းအဝေး (Next Meeting)</div>
+  <ul class="meta-list">
+    <li><b>Agenda:</b> {{ minute.next_meeting.agenda or "Follow-up Meeting" }}</li>
+    <li><b>Date:</b> {{ minute.next_meeting.date or "မဖော်ပြထားပါ" }}</li>
+  </ul>
+
+  <hr class="section-divider">
+
+  <!-- ၁၀။ အခြားမှတ်ချက်များ -->
+  <div class="section-title">၁၀။ အခြားမှတ်ချက်များ (Additional Notes)</div>
+  <ul>
+    {% for note in minute.additional_notes %}
+    <li>{{ note }}</li>
+    {% endfor %}
+  </ul>
+
+</body>
+</html>

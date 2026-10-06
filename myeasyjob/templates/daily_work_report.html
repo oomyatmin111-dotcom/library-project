@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <title>DAILY WORK REPORT - {{ report.name }} - {{ report.date }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 18mm 18mm 18mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'Myanmar Text', sans-serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      font-family: 'Myanmar Text', 'Pyidaungsu', 'Padauk', 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.7;
+      color: #1e293b;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+    .header-table td {
+      vertical-align: middle;
+      padding: 0;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 22px;
+      border: 3px solid #38bdf8;
+      text-align: center;
+      line-height: 50px;
+    }
+    .company-title {
+      font-size: 19pt;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .company-subtitle {
+      font-size: 10.5pt;
+      color: #475569;
+      margin-top: 3px;
+    }
+    .company-meta {
+      text-align: right;
+      font-size: 9.5pt;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .header-divider {
+      height: 3px;
+      background: linear-gradient(90deg, #0284c7 0%, #2563eb 50%, #38bdf8 100%);
+      border-radius: 2px;
+      margin: 12px 0 24px 0;
+    }
+    .doc-title {
+      font-size: 22pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 8px;
+      display: inline-block;
+    }
+    .meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 26px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      row-gap: 8px;
+      column-gap: 20px;
+      font-size: 11pt;
+    }
+    .meta-item {
+      display: flex;
+      align-items: baseline;
+    }
+    .meta-label {
+      font-weight: 700;
+      color: #334155;
+      min-width: 120px;
+    }
+    .meta-value {
+      color: #0f172a;
+    }
+    .section-title {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-top: 20px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 6px;
+    }
+    .work-item {
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #0284c7;
+      border-radius: 6px;
+    }
+    .work-header {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    .field-row {
+      margin-bottom: 5px;
+      line-height: 1.6;
+    }
+    .field-label {
+      font-weight: 600;
+      color: #334155;
+      display: inline-block;
+      min-width: 130px;
+    }
+    .field-val {
+      color: #1e293b;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 9pt;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+    .badge-done { background: #dcfce7; color: #166534; }
+    .badge-progress { background: #e0f2fe; color: #0369a1; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+    .meeting-ref-box {
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: #f1f5f9;
+      border-radius: 4px;
+      font-size: 10.5pt;
+      color: #0369a1;
+      font-weight: 600;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header with My Easy Job branding -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 55%;">
+        <div class="logo-container">
+          <div class="logo-badge">EJ</div>
+          <div>
+            <div class="company-title">My Easy Job</div>
+            <div class="company-subtitle">Business IT Solution</div>
+          </div>
+        </div>
+      </td>
+      <td style="width: 45%;">
+        <div class="company-meta">
+          <div>No.12, Min Nandar Main Road,</div>
+          <div>Dawbon Tsp, Yangon</div>
+          <div>www.myeasyjob.com.mm, info@myeasyjob.com.mm</div>
+          <div>Hotline : +95 9 421 014 055</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="header-divider"></div>
+
+  <!-- Document Title -->
+  <div class="doc-title">DAILY WORK REPORT</div>
+
+  <!-- Meta Information matching user format -->
+  <div class="meta-box">
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Name:</span>
+        <span class="meta-value">{{ report.name }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Date:</span>
+        <span class="meta-value">{{ report.date }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Department:</span>
+        <span class="meta-value">{{ report.department }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Report Type:</span>
+        <span class="meta-value">{{ report.report_type }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Position:</span>
+        <span class="meta-value">{{ report.position }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Work Details -->
+  <div class="section-title">Work Details:</div>
+
+  {% for item in report.work_details %}
+  <div class="work-item">
+    <div class="work-header">{{ loop.index }}. Project: {{ item.project }}</div>
+    
+    <div class="field-row">
+      <span class="field-label">Task:</span>
+      <span class="field-val">{{ item.task }}</span>
+    </div>
+    
+    <div class="field-row">
+      <span class="field-label">Status:</span>
+      <span class="field-val">
+        <span class="badge {% if item.status == 'Done' or item.status == 'Completed' %}badge-done{% elif item.status == 'In Progress' %}badge-progress{% else %}badge-pending{% endif %}">
+          {{ item.status }}
+        </span>
+      </span>
+    </div>
+
+    <div class="field-row">
+      <span class="field-label">Remark:</span>
+      <span class="field-val">{{ item.remark or "-" }}</span>
+    </div>
+
+    <div class="field-row">
+      <span class="field-label">Tomorrow Plan:</span>
+      <span class="field-val">{{ item.tomorrow_plan or "-" }}</span>
+    </div>
+
+    {% if item.meeting_minute_ref %}
+    <div class="meeting-ref-box">
+      📎 {{ item.meeting_minute_ref }}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+</body>
+</html>

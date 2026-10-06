@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ report.project_name }} - Project Status Report</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 18mm 18mm 18mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: 'Myanmar Text', sans-serif;
+        font-size: 9pt;
+        color: #64748b;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      font-family: 'Myanmar Text', 'Pyidaungsu', 'Padauk', 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.6;
+      color: #1e293b;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+    .header-table td {
+      vertical-align: middle;
+      padding: 0;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 22px;
+      border: 3px solid #38bdf8;
+      text-align: center;
+      line-height: 50px;
+    }
+    .company-title {
+      font-size: 19pt;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1.1;
+      margin: 0;
+    }
+    .company-subtitle {
+      font-size: 10.5pt;
+      color: #475569;
+      margin-top: 3px;
+    }
+    .company-meta {
+      text-align: right;
+      font-size: 9.5pt;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .header-divider {
+      height: 3px;
+      background: linear-gradient(90deg, #0284c7 0%, #2563eb 50%, #38bdf8 100%);
+      border-radius: 2px;
+      margin: 12px 0 24px 0;
+    }
+    .report-title-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 5px solid #0284c7;
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+    .report-title {
+      font-size: 20pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 6px 0;
+    }
+    .report-subtitle {
+      font-size: 11pt;
+      color: #475569;
+    }
+    .kpi-grid {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 10px;
+      margin-bottom: 20px;
+    }
+    .kpi-card {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-value {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #0369a1;
+      margin-top: 4px;
+    }
+    .kpi-label {
+      font-size: 9.5pt;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .progress-bar-container {
+      background-color: #e2e8f0;
+      border-radius: 9999px;
+      height: 14px;
+      width: 100%;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0284c7 0%, #10b981 100%);
+      border-radius: 9999px;
+    }
+    .section-title {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #3b5998;
+      margin-top: 24px;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    table.data-table th {
+      background-color: #f1f5f9;
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 10.5pt;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 9pt;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #e0f2fe; color: #075985; }
+    ul {
+      margin: 6px 0 12px 0;
+      padding-left: 22px;
+    }
+    li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header with My Easy Job -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 55%;">
+        <div class="logo-container">
+          <div class="logo-badge">EJ</div>
+          <div>
+            <div class="company-title">My Easy Job</div>
+            <div class="company-subtitle">Business IT Solution</div>
+          </div>
+        </div>
+      </td>
+      <td style="width: 45%;">
+        <div class="company-meta">
+          <div>No.12, Min Nandar Main Road,</div>
+          <div>Dawbon Tsp, Yangon</div>
+          <div>www.myeasyjob.com.mm, info@myeasyjob.com.mm</div>
+          <div>Hotline : +95 9 421 014 055</div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="header-divider"></div>
+
+  <!-- Report Header Banner -->
+  <div class="report-title-box">
+    <div class="report-title">{{ report.project_name }} - ပရောဂျက် အခြေအနေ အစီရင်ခံစာ</div>
+    <div class="report-subtitle">
+      <b>အစီရင်ခံစာ ကာလ:</b> {{ report.period }} &nbsp;|&nbsp; 
+      <b>ထုတ်ပြန်သည့် နေ့စွဲ:</b> {{ report.report_date }} &nbsp;|&nbsp; 
+      <b>တာဝန်ခံ:</b> {{ report.prepared_by or "My Easy Job PMO" }}
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <table class="kpi-grid">
+    <tr>
+      <td class="kpi-card" style="width: 25%;">
+        <div class="kpi-label">Progress</div>
+        <div class="kpi-value">{{ report.progress_percentage }}%</div>
+      </td>
+      <td class="kpi-card" style="width: 25%;">
+        <div class="kpi-label">Status</div>
+        <div class="kpi-value" style="font-size: 14pt; padding-top: 5px;">
+          <span class="badge {% if report.status == 'Completed' %}badge-success{% elif report.status == 'On Track' %}badge-info{% elif report.status == 'At Risk' %}badge-warning{% else %}badge-danger{% endif %}">
+            {{ report.status }}
+          </span>
+        </div>
+      </td>
+      <td class="kpi-card" style="width: 25%;">
+        <div class="kpi-label">Start Date</div>
+        <div class="kpi-value" style="font-size: 13pt; color: #1e293b;">{{ report.start_date }}</div>
+      </td>
+      <td class="kpi-card" style="width: 25%;">
+        <div class="kpi-label">Target Deadline</div>
+        <div class="kpi-value" style="font-size: 13pt; color: #b91c1c;">{{ report.deadline }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Progress Bar -->
+  <div style="margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; font-size: 9.5pt; font-weight: 600; color: #475569;">
+      <span>Overall Project Completion</span>
+      <span>{{ report.progress_percentage }}%</span>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" style="width: {{ report.progress_percentage }}%;"></div>
+    </div>
+  </div>
+
+  <!-- ၁။ အနှစ်ချုပ် သုံးသပ်ချက် (Executive Summary) -->
+  <div class="section-title">၁။ အနှစ်ချုပ် သုံးသပ်ချက် (Executive Summary)</div>
+  <p>{{ report.summary }}</p>
+
+  <!-- ၂။ အဓိက ပြီးစီးမှုများ (Key Deliverables & Milestones) -->
+  <div class="section-title">၂။ အဓိက ပြီးစီးမှုများနှင့် မှတ်တိုင်များ (Key Achievements)</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width: 45%;">လုပ်ငန်းစဉ် / Task</th>
+        <th style="width: 20%;">တာဝန်ယူသည့် အဖွဲ့</th>
+        <th style="width: 20%;">ပြီးစီးသည့် နေ့စွဲ</th>
+        <th style="width: 15%;">အခြေအနေ</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in report.milestones %}
+      <tr>
+        <td><b>{{ item.title }}</b><br><small style="color: #64748b;">{{ item.description }}</small></td>
+        <td>{{ item.team }}</td>
+        <td>{{ item.target_date }}</td>
+        <td>
+          <span class="badge {% if item.status == 'Completed' %}badge-success{% elif item.status == 'In Progress' %}badge-info{% else %}badge-warning{% endif %}">
+            {{ item.status }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- ၃။ လုပ်ဆောင်ဆဲ လုပ်ငန်းများနှင့် ရှေ့ဆက်ဆောင်ရွက်မည့် အစီအစဉ်များ (Upcoming Steps) -->
+  <div class="section-title">၃။ ရှေ့ဆက်ဆောင်ရွက်မည့် လုပ်ငန်းစဉ်များ (Upcoming Steps)</div>
+  <ul>
+    {% for step in report.upcoming_steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ul>
+
+  <!-- ၄။ သတိပြုရန် အချက်များနှင့် အန္တရာယ်စီမံခန့်ခွဲမှု (Risks & Warning Status) -->
+  <div class="section-title">၄။ သတိပြုရန် အချက်များနှင့် အန္တရာယ်များ (Risks & Warning Status)</div>
+  <ul>
+    {% for risk in report.risks %}
+    <li>{{ risk }}</li>
+    {% endfor %}
+  </ul>
+
+  <!-- ၅။ အခြားမှတ်ချက်များ (Additional Notes) -->
+  {% if report.notes %}
+  <div class="section-title">၅။ အခြားမှတ်ချက်များနှင့် အကြံပြုချက်များ (Additional Notes)</div>
+  <ul>
+    {% for note in report.notes %}
+    <li>{{ note }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+</body>
+</html>
