@@ -13,18 +13,29 @@ OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
 def find_browser_executable() -> str:
+    import shutil
+    for cmd in ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "msedge"]:
+        path = shutil.which(cmd)
+        if path:
+            return path
+
     candidates = [
+        # Windows
         r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
         r"C:\Program Files\Google\Chrome\Application\chrome.exe",
         r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
         os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Edge\Application\msedge.exe"),
         os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        # Linux
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
     ]
     for p in candidates:
         if os.path.exists(p):
             return p
-    return "msedge"
+    return "chromium"
 
 def render_html_to_pdf(html_content: str, output_filename: str) -> str:
     browser_exe = find_browser_executable()
@@ -39,6 +50,8 @@ def render_html_to_pdf(html_content: str, output_filename: str) -> str:
         browser_exe,
         "--headless",
         "--disable-gpu",
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
         "--no-pdf-header-footer",
         f"--print-to-pdf={str(output_pdf_path)}",
         str(temp_html_path)
