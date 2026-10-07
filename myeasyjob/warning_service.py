@@ -10,6 +10,57 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_PROJECTS = [
+  {
+    "id": "proj-lms-01",
+    "name": "Oo Ko - LMS (Learning Management System)",
+    "client": "Oo Ko Education",
+    "start_date": "2026-05-01",
+    "deadline": "2026-10-10",
+    "status": "In Progress",
+    "progress_percentage": 75,
+    "priority": "High",
+    "team_leads": ["Ayeminn Thu", "Su Latt"],
+    "description": "Mobile app UI/UX revision, private video streaming server migration, and subscription unlock flow."
+  },
+  {
+    "id": "proj-lib-02",
+    "name": "Library & Digital Comic Reader Platform",
+    "client": "Digital Media Group",
+    "start_date": "2026-09-01",
+    "deadline": "2026-10-05",
+    "status": "Review",
+    "progress_percentage": 92,
+    "priority": "Urgent",
+    "team_leads": ["Tech Lead Ko Oo"],
+    "description": "Multi-tier physical library management, comic reader, VIP subscriptions and audit logging."
+  },
+  {
+    "id": "proj-mej-03",
+    "name": "My Easy Job Automated Executive Suite",
+    "client": "My Easy Job Internal",
+    "start_date": "2026-10-12",
+    "deadline": "2026-12-20",
+    "status": "Planning",
+    "progress_percentage": 20,
+    "priority": "Medium",
+    "team_leads": ["My Easy Job PMO"],
+    "description": "Automated meeting minute transcription, executive project report generation, and multi-channel deadline alerts."
+  },
+  {
+    "id": "proj-fin-04",
+    "name": "FinTech Multi-Currency Payment Gateway",
+    "client": "KBZ & WavePay Partner",
+    "start_date": "2026-08-15",
+    "deadline": "2026-11-30",
+    "status": "In Progress",
+    "progress_percentage": 50,
+    "priority": "Medium",
+    "team_leads": ["Senior Backend Dev"],
+    "description": "Secure webhook handler, HMAC signatures, and instant settlement ledger."
+  }
+]
+
 class WarningService:
     def __init__(self, data_dir: Path):
         self.data_dir = data_dir
@@ -18,12 +69,17 @@ class WarningService:
 
     def get_projects(self) -> List[Dict[str, Any]]:
         if not self.projects_file.exists():
-            return []
+            self.save_projects(DEFAULT_PROJECTS)
+            return DEFAULT_PROJECTS
         try:
             with open(self.projects_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if not data:
+                    self.save_projects(DEFAULT_PROJECTS)
+                    return DEFAULT_PROJECTS
+                return data
         except Exception:
-            return []
+            return DEFAULT_PROJECTS
 
     def save_projects(self, projects: List[Dict[str, Any]]) -> None:
         with open(self.projects_file, "w", encoding="utf-8") as f:
