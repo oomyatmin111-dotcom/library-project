@@ -22,40 +22,63 @@ document.addEventListener("DOMContentLoaded", () => {
   const minuteLoading = document.getElementById("minute-loading");
   const btnQuickSample = document.getElementById("btn-quick-sample");
 
+  let minutesCache = [];
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function triggerDirectDownload(url) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   async function loadMeetingMinutes() {
     try {
       const res = await fetch("/api/meeting-minutes");
       const data = await res.json();
-      renderMinutesList(data);
+      minutesCache = data || [];
+      renderMinutesList(minutesCache);
     } catch (err) {
       console.error("Failed to load minutes", err);
     }
   }
 
   function renderMinutesList(minutes) {
+    minutesCache = minutes || [];
     if (!minutes || minutes.length === 0) {
       minutesList.innerHTML = `<div class="empty-state"><p>မှတ်တမ်းများ မရှိသေးပါ</p></div>`;
       return;
     }
     minutesList.innerHTML = minutes.map(m => {
       const info = m.meeting_info || {};
-      const pdfUrl = m.pdf_url || `/pdfs/Meeting_Minute_${(info.project || "meeting").replace(/ /g, "_")}.pdf`;
+      const downloadUrl = `/api/meeting-minutes/${m.id}/download-pdf`;
       return `
         <div class="minute-card">
           <div class="minute-card-header">
-            <span class="minute-title">${info.project || "Untitled Project"}</span>
-            <span class="badge info">${info.date || ""}</span>
+            <span class="minute-title">${escapeHtml(info.project || "Untitled Project")}</span>
+            <span class="badge info">${escapeHtml(info.date || "")}</span>
           </div>
           <div class="minute-meta">
-            <b>Topic:</b> ${info.meeting_type || "Discussion"}<br>
-            <b>Prepared By:</b> ${info.prepared_by || "My Easy Job"}
+            <b>Topic:</b> ${escapeHtml(info.meeting_type || "Discussion")}<br>
+            <b>Prepared By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}
           </div>
-          <div style="margin-top: 10px; display: flex; gap: 8px;">
-            <button class="btn btn-primary btn-sm" onclick="exportMinutePdf('${m.id}')">
-              📄 Download PDF
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="previewMinuteDetails('${m.id}')">
-              🔍 View Details
+          <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="${downloadUrl}" class="btn btn-primary btn-sm" download>
+              📥 Download PDF
+            </a>
+            <button class="btn btn-secondary btn-sm" onclick="openMinuteDetailModal('${m.id}')">
+              🔍 View Details & Edit
             </button>
           </div>
         </div>
@@ -63,30 +86,347 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
   }
 
-  window.exportMinutePdf = async function(id) {
-    try {
-      const res = await fetch(`/api/meeting-minutes/${id}/pdf`, { method: "POST" });
-      const data = await res.json();
-      if (data.pdf_url) {
-        window.open(data.pdf_url, "_blank");
+  window.exportMinutePdf = function(id) {
+    triggerDirectDownload(`/api/meeting-minutes/${id}/download-pdf`);
+  };
+
+  function renderMinuteDocumentPreview(m) {
+    const info = m.meeting_info || {};
+    const downloadUrl = `/api/meeting-minutes/${m.id}/download-pdf`;
+
+    let actionsHtml = "";
+    if (m.action_items_grouped && m.action_items_grouped.length > 0) {
+      actionsHtml = m.action_items_grouped.map(grp => `
+        <div style="font-weight: 600; color: #1e293b; margin-top: 8px; margin-bottom: 4px;">• ${escapeHtml(grp.team)}</div>
+        <ul style="margin: 4px 0 10px 20px; list-style-type: circle; color: #334155;">
+          ${(grp.items || []).map(it => `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`).join("")}
+        </ul>
+      `).join("");
+    } else if (m.action_items && m.action_items.length > 0) {
+      actionsHtml = `
+        <ul style="margin: 6px 0 12px 20px; list-style-type: disc; color: #334155;">
+          ${m.action_items.map(it => `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`).join("")}
+        </ul>
+      `;
+    } else {
+      actionsHtml = `<p style="color: #94a3b8; font-style: italic; margin-left: 10px;">မရှိပါ</p>`;
+    }
+
+    const renderList = (items) => {
+      if (!items || items.length === 0) return `<p style="color: #94a3b8; font-style: italic; margin-left: 10px;">မရှိပါ</p>`;
+      return `
+        <ul style="margin: 6px 0 12px 20px; list-style-type: disc; color: #334155;">
+          ${items.map(it => {
+            if (typeof it === 'string') return `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`;
+            if (it && it.topic) {
+              const subHtml = it.sub_items && it.sub_items.length > 0
+                ? `<ul style="margin: 4px 0 6px 18px; list-style-type: circle;">${it.sub_items.map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ul>`
+                : "";
+              return `<li style="margin-bottom: 4px;"><b>${escapeHtml(it.topic)}</b>${subHtml}</li>`;
+            }
+            return `<li style="margin-bottom: 4px;">${escapeHtml(JSON.stringify(it))}</li>`;
+          }).join("")}
+        </ul>
+      `;
+    };
+
+    return `
+      <!-- Preview Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%); color: #fff; font-weight: 800; font-size: 20px; width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            EJ
+          </div>
+          <div>
+            <div style="font-size: 19px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">My Easy Job</div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #0284c7; text-transform: uppercase; letter-spacing: 0.8px;">Business IT Solution</div>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 11.5px; color: #64748b; line-height: 1.5;">
+          <div><b>Reported By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}</div>
+          <div><b>Contact:</b> info@myeasyjob.com</div>
+          <div><b>Website:</b> <a href="https://www.myeasyjob.com" target="_blank" style="color: #0284c7;">www.myeasyjob.com</a></div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin: 16px 0 22px 0;">
+        <h2 style="font-size: 21px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">အစည်းအဝေး မှတ်တမ်း</h2>
+        <div style="font-size: 14px; font-weight: 600; color: #2563eb;">Meeting Minute — ${escapeHtml(info.project || "Project")}</div>
+      </div>
+
+      <!-- 1. Meeting Info Box -->
+      <div style="background: #f1f5f9; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 4px; margin-bottom: 18px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 8px;">၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: #1e293b;">
+          <div><b>Project Name:</b> ${escapeHtml(info.project || "")}</div>
+          <div><b>Date:</b> ${escapeHtml(info.date || "")}</div>
+          <div><b>Meeting Type:</b> ${escapeHtml(info.meeting_type || "")}</div>
+          <div><b>Prepared By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}</div>
+        </div>
+      </div>
+
+      <!-- 2. Attendees -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၂။ တက်ရောက်သူများ (Attendees)</div>
+        ${renderList(m.attendees)}
+      </div>
+
+      <!-- 3. Purpose -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၃။ ရည်ရွယ်ချက် (Purpose)</div>
+        ${renderList(m.purpose)}
+      </div>
+
+      <!-- 4. Discussions -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၄။ ဆွေးနွေးချက်များ (Discussion Points)</div>
+        ${renderList(m.discussion_points)}
+      </div>
+
+      <!-- 5. Decisions -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၅။ ဆုံးဖြတ်ချက်များ (Decisions)</div>
+        ${renderList(m.decisions)}
+      </div>
+
+      <!-- 6. Action Items -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၆။ လုပ်ဆောင်ရန်တာဝန်များ (Action Items)</div>
+        ${actionsHtml}
+      </div>
+
+      <!-- 7. Issues / Risks -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၇။ ပြဿနာ / အန္တရာယ်များ (Issues / Risks)</div>
+        ${renderList(m.issues_risks)}
+      </div>
+
+      <!-- 8. Pending Clarifications -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၈။ အတည်ပြုရန်လိုအပ်ချက်များ (Pending Clarifications)</div>
+        ${renderList(m.pending_clarifications)}
+      </div>
+
+      <!-- 9. Next Meeting -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၉။ နောက်အစည်းအဝေး (Next Meeting)</div>
+        <div style="margin: 6px 0 10px 14px; font-size: 13px; color: #334155;">
+          <div><b>Agenda:</b> ${escapeHtml(m.next_meeting?.agenda || "မဖော်ပြထားပါ")}</div>
+          <div><b>Date:</b> ${escapeHtml(m.next_meeting?.date || "မဖော်ပြထားပါ")}</div>
+        </div>
+      </div>
+
+      <!-- 10. Additional Notes -->
+      <div style="margin-bottom: 22px;">
+        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၁၀။ အခြားမှတ်ချက်များ (Additional Notes)</div>
+        ${renderList(m.additional_notes)}
+      </div>
+
+      <!-- Bottom Quick Actions inside preview -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="showEditMode()">
+          ✏️ Edit This Minute (ပြင်ဆင်မည်)
+        </button>
+        <a href="${downloadUrl}" class="btn btn-primary btn-sm" download style="background: #16a34a; border-color: #16a34a;">
+          📥 Download PDF Directly
+        </a>
+      </div>
+    `;
+  }
+
+  function populateMinuteModal(m) {
+    const previewContainer = document.getElementById("minute-preview-container");
+    if (previewContainer) {
+      previewContainer.innerHTML = renderMinuteDocumentPreview(m);
+    }
+
+    const downloadLink = document.getElementById("btn-modal-direct-download");
+    if (downloadLink) {
+      downloadLink.href = `/api/meeting-minutes/${m.id}/download-pdf`;
+    }
+
+    // Populate edit form
+    const info = m.meeting_info || {};
+    document.getElementById("edit-minute-id").value = m.id || "";
+    document.getElementById("edit-min-project").value = info.project || "";
+    document.getElementById("edit-min-date").value = info.date || "";
+    document.getElementById("edit-min-type").value = info.meeting_type || "";
+    document.getElementById("edit-min-prepared").value = info.prepared_by || "My Easy Job";
+
+    document.getElementById("edit-min-attendees").value = (m.attendees || []).join("\n");
+    document.getElementById("edit-min-purpose").value = (m.purpose || []).join("\n");
+    document.getElementById("edit-min-discussions").value = (m.discussion_points || []).join("\n");
+    document.getElementById("edit-min-decisions").value = (m.decisions || []).join("\n");
+
+    let uiItems = [];
+    let devItems = [];
+    if (m.action_items_grouped && m.action_items_grouped.length > 0) {
+      const uiGroup = m.action_items_grouped.find(g => (g.team || "").toLowerCase().includes("ui"));
+      const devGroup = m.action_items_grouped.find(g => (g.team || "").toLowerCase().includes("dev"));
+      if (uiGroup && uiGroup.items) uiItems = uiGroup.items;
+      if (devGroup && devGroup.items) devItems = devGroup.items;
+    } else if (m.action_items && m.action_items.length > 0) {
+      devItems = m.action_items;
+    }
+
+    document.getElementById("edit-min-actions-ui").value = uiItems.join("\n");
+    document.getElementById("edit-min-actions-dev").value = devItems.join("\n");
+    document.getElementById("edit-min-issues").value = (m.issues_risks || []).join("\n");
+
+    const clarifications = (m.pending_clarifications || []).map(c => {
+      if (typeof c === 'string') return c;
+      if (c && c.topic) {
+        if (c.sub_items && c.sub_items.length > 0) {
+          return `${c.topic}: ${c.sub_items.join(", ")}`;
+        }
+        return c.topic;
       }
-    } catch (err) {
-      alert("PDF download failed: " + err.message);
+      return JSON.stringify(c);
+    }).join("\n");
+    document.getElementById("edit-min-clarifications").value = clarifications;
+
+    document.getElementById("edit-min-next-agenda").value = m.next_meeting?.agenda || "";
+    document.getElementById("edit-min-next-date").value = m.next_meeting?.date || "";
+    document.getElementById("edit-min-notes").value = (m.additional_notes || []).join("\n");
+  }
+
+  const previewContainer = document.getElementById("minute-preview-container");
+  const minuteEditForm = document.getElementById("minute-edit-form");
+  const btnShowPreview = document.getElementById("btn-show-preview-mode");
+  const btnShowEdit = document.getElementById("btn-show-edit-mode");
+
+  window.showPreviewMode = function() {
+    if (previewContainer) previewContainer.classList.remove("hidden");
+    if (minuteEditForm) minuteEditForm.classList.add("hidden");
+    if (btnShowPreview) {
+      btnShowPreview.classList.add("btn-primary");
+      btnShowPreview.classList.remove("btn-secondary");
+    }
+    if (btnShowEdit) {
+      btnShowEdit.classList.remove("btn-primary");
+      btnShowEdit.classList.add("btn-secondary");
     }
   };
 
-  window.previewMinuteDetails = async function(id) {
-    try {
-      const res = await fetch("/api/meeting-minutes");
-      const list = await res.json();
-      const m = list.find(item => item.id === id);
-      if (m) {
-        alert(`Project: ${m.meeting_info.project}\nAttendees: ${m.attendees.join(", ")}\nPurpose: ${m.purpose.join("; ")}`);
-      }
-    } catch (err) {
-      console.error(err);
+  window.showEditMode = function() {
+    if (previewContainer) previewContainer.classList.add("hidden");
+    if (minuteEditForm) minuteEditForm.classList.remove("hidden");
+    if (btnShowEdit) {
+      btnShowEdit.classList.add("btn-primary");
+      btnShowEdit.classList.remove("btn-secondary");
+    }
+    if (btnShowPreview) {
+      btnShowPreview.classList.remove("btn-primary");
+      btnShowPreview.classList.add("btn-secondary");
     }
   };
+
+  if (btnShowPreview) btnShowPreview.addEventListener("click", window.showPreviewMode);
+  if (btnShowEdit) btnShowEdit.addEventListener("click", window.showEditMode);
+
+  window.openMinuteDetailModal = async function(id) {
+    let m = minutesCache.find(item => item.id === id);
+    if (!m) {
+      try {
+        const res = await fetch("/api/meeting-minutes");
+        minutesCache = await res.json();
+        m = minutesCache.find(item => item.id === id);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (!m) {
+      alert("အစည်းအဝေး မှတ်တမ်း မတွေ့ရှိပါ");
+      return;
+    }
+
+    populateMinuteModal(m);
+    showPreviewMode();
+
+    const modal = document.getElementById("minute-edit-modal");
+    if (modal) modal.classList.remove("hidden");
+  };
+
+  // Close handlers
+  const minuteModal = document.getElementById("minute-edit-modal");
+  const btnCloseMinuteModal = document.getElementById("btn-close-minute-modal");
+  const btnCancelMinuteEdit = document.getElementById("btn-cancel-minute-edit");
+  const minuteModalBackdrop = document.getElementById("minute-modal-backdrop");
+
+  const closeMinuteModal = () => {
+    if (minuteModal) minuteModal.classList.add("hidden");
+  };
+
+  if (btnCloseMinuteModal) btnCloseMinuteModal.addEventListener("click", closeMinuteModal);
+  if (btnCancelMinuteEdit) btnCancelMinuteEdit.addEventListener("click", closeMinuteModal);
+  if (minuteModalBackdrop) minuteModalBackdrop.addEventListener("click", closeMinuteModal);
+
+  // Edit form submit
+  if (minuteEditForm) {
+    minuteEditForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("edit-minute-id").value;
+      const parseLines = (val) => (val || "").split("\n").map(s => s.trim()).filter(Boolean);
+
+      const uiItems = parseLines(document.getElementById("edit-min-actions-ui").value);
+      const devItems = parseLines(document.getElementById("edit-min-actions-dev").value);
+      const action_items_grouped = [];
+      if (uiItems.length > 0) action_items_grouped.push({ team: "UI/UX Team", items: uiItems });
+      if (devItems.length > 0) action_items_grouped.push({ team: "Dev Team", items: devItems });
+
+      const updated = {
+        id: id,
+        meeting_info: {
+          project: document.getElementById("edit-min-project").value.trim(),
+          date: document.getElementById("edit-min-date").value.trim(),
+          meeting_type: document.getElementById("edit-min-type").value.trim(),
+          prepared_by: document.getElementById("edit-min-prepared").value.trim() || "My Easy Job"
+        },
+        attendees: parseLines(document.getElementById("edit-min-attendees").value),
+        purpose: parseLines(document.getElementById("edit-min-purpose").value),
+        discussion_points: parseLines(document.getElementById("edit-min-discussions").value),
+        decisions: parseLines(document.getElementById("edit-min-decisions").value),
+        action_items_grouped: action_items_grouped,
+        issues_risks: parseLines(document.getElementById("edit-min-issues").value),
+        pending_clarifications: parseLines(document.getElementById("edit-min-clarifications").value),
+        next_meeting: {
+          agenda: document.getElementById("edit-min-next-agenda").value.trim(),
+          date: document.getElementById("edit-min-next-date").value.trim()
+        },
+        additional_notes: parseLines(document.getElementById("edit-min-notes").value)
+      };
+
+      const btnSave = document.getElementById("btn-save-minute-changes");
+      const originalText = btnSave.innerText;
+      btnSave.disabled = true;
+      btnSave.innerText = "⏳ Saving & Re-generating PDF...";
+
+      try {
+        const res = await fetch(`/api/meeting-minutes/${id}/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated)
+        });
+        const data = await res.json();
+        btnSave.disabled = false;
+        btnSave.innerText = originalText;
+
+        if (res.ok) {
+          alert("✅ အောင်မြင်စွာ ပြင်ဆင်သိမ်းဆည်းပြီး PDF ကို အသစ်ထုတ်ပေးလိုက်ပါပြီ!");
+          await loadMeetingMinutes();
+          const fresh = minutesCache.find(x => x.id === id) || updated;
+          populateMinuteModal(fresh);
+          showPreviewMode();
+        } else {
+          alert("Update failed: " + (data.detail || "Error"));
+        }
+      } catch (err) {
+        btnSave.disabled = false;
+        btnSave.innerText = originalText;
+        alert("Update error: " + err.message);
+      }
+    });
+  }
 
   let transcribeAbortCtrl = null;
   let transcribeProgressInterval = null;
@@ -170,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.pdf_url) {
         updateTranscribeProgress(100, "✅ အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ!", 4);
         setTimeout(() => minuteLoading.classList.add("hidden"), 1200);
-        window.open(data.pdf_url, "_blank");
+        triggerDirectDownload("/api/meeting-minutes/sample/download-pdf");
         await loadMeetingMinutes();
       }
     } catch (err) {
@@ -213,7 +553,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.status === "success") {
         updateTranscribeProgress(100, "✅ အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!", 4);
         setTimeout(() => minuteLoading.classList.add("hidden"), 1500);
-        if (data.pdf_url) window.open(data.pdf_url, "_blank");
+        const dlUrl = data.download_url || (data.minute ? `/api/meeting-minutes/${data.minute.id}/download-pdf` : data.pdf_url);
+        triggerDirectDownload(dlUrl);
         await loadMeetingMinutes();
       } else {
         minuteLoading.classList.add("error");
@@ -400,19 +741,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (reportLoading) reportLoading.classList.add("hidden");
           }, 1200);
 
+          const dlUrl = data.download_url || (data.filename ? `/api/reports/download-pdf/${data.filename}` : data.pdf_url);
           reportPreviewBox.innerHTML = `
             <div class="report-result-card" style="padding: 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
               <h3 style="color: #166534; margin-bottom: 6px;">🎉 DAILY WORK REPORT PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!</h3>
-              <p style="font-size: 13.5px; color: #1e293b;"><b>Reporter:</b> ${payload.name} (${payload.position})</p>
-              <p style="font-size: 13.5px; color: #1e293b;"><b>Date:</b> ${payload.date} | <b>Total Tasks:</b> ${payload.work_details.length}</p>
-              <div style="margin-top: 12px; display: flex; gap: 8px;">
-                <a href="${data.pdf_url}" target="_blank" class="btn btn-primary">
-                  📥 View & Download Report PDF
+              <p style="font-size: 13.5px; color: #1e293b;"><b>Reporter:</b> ${escapeHtml(payload.name)} (${escapeHtml(payload.position)})</p>
+              <p style="font-size: 13.5px; color: #1e293b;"><b>Date:</b> ${escapeHtml(payload.date)} | <b>Total Tasks:</b> ${payload.work_details.length}</p>
+              <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="${dlUrl}" class="btn btn-primary" download>
+                  📥 Download Report PDF Directly
+                </a>
+                <a href="${data.pdf_url}" target="_blank" class="btn btn-secondary">
+                  👁️ Open In Browser
                 </a>
               </div>
             </div>
           `;
-          window.open(data.pdf_url, "_blank");
+          triggerDirectDownload(dlUrl);
         }
       } catch (err) {
         stopReportProgress();

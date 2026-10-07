@@ -49,12 +49,25 @@ MEETING_MINUTES_FILE = DATA_DIR / "meeting_minutes.json"
 
 def load_meeting_minutes() -> List[dict]:
     if not MEETING_MINUTES_FILE.exists():
-        return []
+        sample = dict(SAMPLE_MEETING_DATA)
+        sample["id"] = "mm-lms-001"
+        sample["created_at"] = "02/05/2026 10:00"
+        save_meeting_minutes([sample])
+        return [sample]
     try:
         with open(MEETING_MINUTES_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+            if not data:
+                sample = dict(SAMPLE_MEETING_DATA)
+                sample["id"] = "mm-lms-001"
+                sample["created_at"] = "02/05/2026 10:00"
+                save_meeting_minutes([sample])
+                return [sample]
+            return data
     except Exception:
-        return []
+        sample = dict(SAMPLE_MEETING_DATA)
+        sample["id"] = "mm-lms-001"
+        return [sample]
 
 def save_meeting_minutes(minutes: List[dict]):
     with open(MEETING_MINUTES_FILE, "w", encoding="utf-8") as f:
@@ -148,8 +161,82 @@ async def export_minute_pdf(minute_id: str):
         if item.get("id") == minute_id:
             pdf_path = generate_meeting_minute_pdf(item)
             filename = Path(pdf_path).name
-            return {"status": "success", "pdf_url": f"/pdfs/{filename}"}
+            return {
+                "status": "success",
+                "pdf_url": f"/pdfs/{filename}",
+                "download_url": f"/api/meeting-minutes/{minute_id}/download-pdf"
+            }
     raise HTTPException(status_code=404, detail="Meeting minute not found")
+
+@app.get("/api/meeting-minutes/{minute_id}/download-pdf")
+async def download_minute_pdf(minute_id: str):
+    history = load_meeting_minutes()
+    target_item = None
+    for item in history:
+        if item.get("id") == minute_id:
+            target_item = item
+            break
+            
+    if not target_item:
+        if minute_id == "sample" or minute_id == "mm-lms-001":
+            target_item = dict(SAMPLE_MEETING_DATA)
+            target_item["id"] = "mm-lms-001"
+        else:
+            raise HTTPException(status_code=404, detail="Meeting minute not found")
+
+    pdf_path = generate_meeting_minute_pdf(target_item)
+    proj_name = target_item.get("meeting_info", {}).get("project", "Meeting").replace(" ", "_")
+    download_filename = f"Meeting_Minute_{proj_name}.pdf"
+    
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=download_filename,
+        headers={"Content-Disposition": f'attachment; filename="{download_filename}"'}
+    )
+
+@app.put("/api/meeting-minutes/{minute_id}")
+@app.post("/api/meeting-minutes/{minute_id}/update")
+async def update_meeting_minute(minute_id: str, updated_minute: dict):
+    history = load_meeting_minutes()
+    found = False
+    for i, item in enumerate(history):
+        if item.get("id") == minute_id:
+            updated_minute["id"] = minute_id
+            updated_minute.setdefault("created_at", item.get("created_at", datetime.now().strftime("%Y-%m-%d %H:%M")))
+            pdf_path = generate_meeting_minute_pdf(updated_minute)
+            filename = Path(pdf_path).name
+            updated_minute["pdf_url"] = f"/pdfs/{filename}"
+            history[i] = updated_minute
+            found = True
+            break
+
+    if not found:
+        updated_minute["id"] = minute_id
+        pdf_path = generate_meeting_minute_pdf(updated_minute)
+        filename = Path(pdf_path).name
+        updated_minute["pdf_url"] = f"/pdfs/{filename}"
+        history.insert(0, updated_minute)
+
+    save_meeting_minutes(history)
+    return {
+        "status": "success",
+        "minute": updated_minute,
+        "pdf_url": updated_minute["pdf_url"],
+        "download_url": f"/api/meeting-minutes/{minute_id}/download-pdf"
+    }
+
+@app.get("/api/reports/download-pdf/{filename}")
+async def download_report_pdf(filename: str):
+    pdf_path = OUTPUT_DIR / filename
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    return FileResponse(
+        path=str(pdf_path),
+        media_type="application/pdf",
+        filename=filename,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 # ==================== 2. REPORT GENERATION PROCESS ====================
 
@@ -166,6 +253,8 @@ async def generate_report(report_data: ProjectReport):
     return {
         "status": "success",
         "pdf_url": f"/pdfs/{filename}",
+        "filename": filename,
+        "download_url": f"/api/reports/download-pdf/{filename}",
         "report": report_dict
     }
 
@@ -204,6 +293,8 @@ async def generate_daily_report(report_data: DailyWorkReport):
     return {
         "status": "success",
         "pdf_url": f"/pdfs/{filename}",
+        "filename": filename,
+        "download_url": f"/api/reports/download-pdf/{filename}",
         "report": report_dict
     }
 

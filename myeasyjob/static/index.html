@@ -444,6 +444,154 @@
     </div>
   </div>
 
+  <!-- Modal: View & Edit Meeting Minute -->
+  <div id="minute-edit-modal" class="modal hidden">
+    <div class="modal-backdrop" id="minute-modal-backdrop"></div>
+    <div class="modal-dialog" style="max-width: 860px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div>
+          <h3 id="minute-modal-title">📄 အစည်းအဝေး မှတ်တမ်း (Preview & Edit)</h3>
+          <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+            အချက်အလက်များကို တိုက်ရိုက် ပြင်ဆင်ပြီး PDF ကို Re-generate လုပ်နိုင်ပါသည်
+          </p>
+        </div>
+        <button class="modal-close" id="btn-close-minute-modal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="overflow-y: auto; padding-right: 8px; flex: 1;">
+        <!-- Top Actions Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; border: 1px solid #e2e8f0; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn btn-primary btn-sm" id="btn-show-preview-mode" style="padding: 6px 12px; font-weight: 600;">
+              👁️ Document Preview
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-show-edit-mode" style="padding: 6px 12px; font-weight: 600;">
+              ✏️ Edit Form (ပြင်ဆင်ရန်)
+            </button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a id="btn-modal-direct-download" href="#" class="btn btn-primary btn-sm" download style="background: #16a34a; border-color: #16a34a; font-weight: 600;">
+              📥 Download PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- Preview Container -->
+        <div id="minute-preview-container" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 24px 28px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06); line-height: 1.6;">
+          <!-- Live Preview Content injected by JS -->
+        </div>
+
+        <form id="minute-edit-form" class="hidden">
+          <input type="hidden" id="edit-minute-id">
+
+          <!-- Section 1 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)</h4>
+            <div class="form-row">
+              <div class="form-group col">
+                <label>Project Name</label>
+                <input type="text" id="edit-min-project" required>
+              </div>
+              <div class="form-group col">
+                <label>Date</label>
+                <input type="text" id="edit-min-date" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col">
+                <label>Meeting Type</label>
+                <input type="text" id="edit-min-type" required>
+              </div>
+              <div class="form-group col">
+                <label>Prepared By</label>
+                <input type="text" id="edit-min-prepared" value="My Easy Job" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၂။ တက်ရောက်သူများ (Attendees - ၁ ကြောင်း ၁ ယောက်)</h4>
+            <textarea id="edit-min-attendees" rows="2" placeholder="Ko Oo&#10;Ayeminn Thu, Su Latt"></textarea>
+          </div>
+
+          <!-- Section 3 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၃။ ရည်ရွယ်ချက် (Purpose - ၁ ကြောင်း ၁ ချက်)</h4>
+            <textarea id="edit-min-purpose" rows="3"></textarea>
+          </div>
+
+          <!-- Section 4 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၄။ ဆွေးနွေးချက်များ (Discussion Points - ၁ ကြောင်း ၁ ချက်)</h4>
+            <textarea id="edit-min-discussions" rows="6"></textarea>
+          </div>
+
+          <!-- Section 5 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၅။ ဆုံးဖြတ်ချက်များ (Decisions - ၁ ကြောင်း ၁ ချက်)</h4>
+            <textarea id="edit-min-decisions" rows="4"></textarea>
+          </div>
+
+          <!-- Section 6 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၆။ လုပ်ဆောင်ရန်တာဝန်များ (Action Items)</h4>
+            <div class="form-group">
+              <label>UI/UX Team Action Items (၁ ကြောင်း ၁ ချက်)</label>
+              <textarea id="edit-min-actions-ui" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Dev Team Action Items (၁ ကြောင်း ၁ ချက်)</label>
+              <textarea id="edit-min-actions-dev" rows="5"></textarea>
+            </div>
+          </div>
+
+          <!-- Section 7 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၇။ ပြဿနာ / အန္တရာယ်များ (Issues / Risks - ၁ ကြောင်း ၁ ချက်)</h4>
+            <textarea id="edit-min-issues" rows="3"></textarea>
+          </div>
+
+          <!-- Section 8 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၈။ အတည်ပြုရန်လိုအပ်ချက်များ (Pending Clarifications)</h4>
+            <textarea id="edit-min-clarifications" rows="3"></textarea>
+          </div>
+
+          <!-- Section 9 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၉။ နောက်အစည်းအဝေး (Next Meeting)</h4>
+            <div class="form-row">
+              <div class="form-group col">
+                <label>Agenda</label>
+                <input type="text" id="edit-min-next-agenda">
+              </div>
+              <div class="form-group col">
+                <label>Date</label>
+                <input type="text" id="edit-min-next-date" placeholder="မဖော်ပြထားပါ">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 10 -->
+          <div class="card" style="margin-bottom: 14px; padding: 14px; background: #f8fafc;">
+            <h4 style="font-size: 13.5px; color: #1e3a8a; margin-bottom: 10px;">၁၀။ အခြားမှတ်ချက်များ (Additional Notes - ၁ ကြောင်း ၁ ချက်)</h4>
+            <textarea id="edit-min-notes" rows="2"></textarea>
+          </div>
+
+          <div class="btn-group" style="position: sticky; bottom: 0; background: #ffffff; padding: 12px 0 6px 0; border-top: 1px solid #e2e8f0; z-index: 10;">
+            <button type="submit" class="btn btn-primary" id="btn-save-minute-changes">
+              💾 Save Changes & Re-generate PDF
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-minute-edit">
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="/static/app.js"></script>
 </body>
 </html>
