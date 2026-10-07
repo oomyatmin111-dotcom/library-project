@@ -793,17 +793,30 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData,
         signal: transcribeAbortCtrl.signal
       });
-      const data = await res.json();
+
+      let data;
+      const cType = res.headers.get("content-type") || "";
+      if (cType.includes("application/json")) {
+        try {
+          data = await res.json();
+        } catch (e) {
+          data = { status: "error", detail: "Invalid JSON response from server" };
+        }
+      } else {
+        const text = await res.text().catch(() => "");
+        data = { status: "error", detail: text || res.statusText || `Server error (${res.status})` };
+      }
+
       stopTranscribeProgress();
-      if (data.status === "success") {
+      if (res.ok && data.status === "success") {
         updateTranscribeProgress(100, "✅ အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!", 4);
         setTimeout(() => minuteLoading.classList.add("hidden"), 1500);
         const dlUrl = data.download_url || (data.minute ? `/api/meeting-minutes/${data.minute.id}/download-pdf` : data.pdf_url);
-        triggerDirectDownload(dlUrl);
+        if (dlUrl) triggerDirectDownload(dlUrl);
         await loadMeetingMinutes();
       } else {
         minuteLoading.classList.add("error");
-        updateTranscribeProgress(0, "Transcribe failed: " + (data.detail || "Error"), 0);
+        updateTranscribeProgress(0, "Transcribe failed: " + (data.detail || `Server error (${res.status})`), 0);
       }
     } catch (err) {
       stopTranscribeProgress();
@@ -1204,10 +1217,13 @@ document.addEventListener("DOMContentLoaded", () => {
       // Render Projects Table
       renderProjectsTable(projects);
 
-      // Populate Report select
-      reportProjSelect.innerHTML = projects.map(p => `
-        <option value="${p.id}">${p.name} (${p.deadline})</option>
-      `).join("");
+      // Populate Report select if element exists
+      const reportProjSelect = document.getElementById("report-proj-select");
+      if (reportProjSelect) {
+        reportProjSelect.innerHTML = projects.map(p => `
+          <option value="${p.id}">${escapeHtml(p.name)} (${escapeHtml(p.deadline)})</option>
+        `).join("");
+      }
     } catch (err) {
       console.error("Failed to load warnings/projects", err);
     }

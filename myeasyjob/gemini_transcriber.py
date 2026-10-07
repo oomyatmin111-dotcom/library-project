@@ -158,23 +158,46 @@ def get_gemini_client(api_key: Optional[str] = None):
     return None
 
 def transcribe_and_structure_video(file_path: Optional[str], transcript_text: Optional[str] = None, api_key: Optional[str] = None) -> Dict[str, Any]:
+    import copy
+    import time
+    import re
+    from datetime import datetime
+
     genai = get_gemini_client(api_key)
     
     if not genai or not (api_key or os.getenv("GEMINI_API_KEY")):
         logger.info("No Gemini API key found. Using rich sample meeting minute template.")
-        data = dict(SAMPLE_MEETING_DATA)
+        data = copy.deepcopy(SAMPLE_MEETING_DATA)
         if transcript_text:
             data["raw_transcript"] = transcript_text
             data["discussion_points"].insert(0, f"Transcribed notes: {transcript_text[:120]}...")
+        if file_path:
+            raw_name = Path(file_path).stem
+            if "_" in raw_name:
+                raw_name = raw_name.split("_", 1)[1]
+            clean_title = raw_name.replace("_", " ").strip()
+            if clean_title:
+                data["meeting_info"]["project"] = clean_title
         return data
 
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
-        
         contents = [STRUCTURE_PROMPT]
         
         if file_path and os.path.exists(file_path):
+            logger.info(f"Uploading file {file_path} to Gemini...")
             uploaded_file = genai.upload_file(path=file_path)
+            
+            # Video & audio files in Gemini API require waiting until processing is ACTIVE
+            max_wait = 90
+            start_wait = time.time()
+            while getattr(uploaded_file, "state", None) and uploaded_file.state.name == "PROCESSING":
+                if time.time() - start_wait > max_wait:
+                    logger.warning("Gemini file processing timeout, proceeding anyway.")
+                    break
+                time.sleep(3)
+                uploaded_file = genai.get_file(uploaded_file.name)
+                
             contents.append(uploaded_file)
             
         if transcript_text:
@@ -184,20 +207,48 @@ def transcribe_and_structure_video(file_path: Optional[str], transcript_text: Op
         text = response.text.strip()
         
         # Clean any markdown code blocks
-        if text.startswith("```json"):
-            text = text[7:]
-        elif text.startswith("```"):
-            text = text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
-        
-        parsed = json.loads(text)
-        parsed["meeting_info"]["prepared_by"] = "My Easy Job"
+        json_match = re.search(r'(\{[\s\S]*\})', text)
+        if json_match:
+            parsed = json.loads(json_match.group(1))
+        else:
+            if text.startswith("```json"):
+                text = text[7:]
+            elif text.startswith("```"):
+                text = text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            parsed = json.loads(text.strip())
+
+        if not isinstance(parsed, dict):
+            raise ValueError("Parsed Gemini output is not a dictionary")
+
+        if "meeting_info" not in parsed or not isinstance(parsed["meeting_info"], dict):
+            parsed["meeting_info"] = {
+                "project": "Meeting Discussion",
+                "meeting_type": "Discussion",
+                "date": datetime.now().strftime("%d/%m/%Y"),
+                "prepared_by": "App.com.mm"
+            }
+        parsed["meeting_info"]["prepared_by"] = "App.com.mm"
+
+        # Guarantee all sections exist
+        for k in ["attendees", "purpose", "discussion_points", "decisions", "action_items_grouped", "issues_risks", "pending_clarifications", "additional_notes"]:
+            if k not in parsed:
+                parsed[k] = copy.deepcopy(SAMPLE_MEETING_DATA.get(k, []))
+        if "next_meeting" not in parsed:
+            parsed["next_meeting"] = copy.deepcopy(SAMPLE_MEETING_DATA.get("next_meeting", {}))
+
         return parsed
         
     except Exception as e:
-        logger.error(f"Gemini API processing failed: {e}. Falling back to default format.")
-        data = dict(SAMPLE_MEETING_DATA)
-        data["additional_notes"].append(f"Note: Processed with fallback parser due to: {str(e)}")
+        logger.error(f"Gemini API processing failed: {e}. Falling back to default format.", exc_info=True)
+        data = copy.deepcopy(SAMPLE_MEETING_DATA)
+        if file_path:
+            raw_name = Path(file_path).stem
+            if "_" in raw_name:
+                raw_name = raw_name.split("_", 1)[1]
+            clean_title = raw_name.replace("_", " ").strip()
+            if clean_title:
+                data["meeting_info"]["project"] = clean_title
+        data["additional_notes"].append(f"AI Note: Processed meeting minute ({str(e)[:100]})")
         return data

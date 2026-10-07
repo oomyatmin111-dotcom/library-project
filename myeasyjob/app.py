@@ -104,49 +104,82 @@ async def upload_and_transcribe(
     meeting_date: Optional[str] = Form(None),
     gemini_api_key: Optional[str] = Form(None)
 ):
-    saved_file_path = None
-    if file and file.filename:
-        safe_name = f"{uuid.uuid4().hex[:6]}_{file.filename}"
-        saved_file_path = str(UPLOADS_DIR / safe_name)
-        with open(saved_file_path, "wb") as f_out:
-            content = await file.read()
-            f_out.write(content)
+    try:
+        saved_file_path = None
+        if file and file.filename:
+            raw_fname = Path(file.filename).name
+            clean_fname = re.sub(r'[^\w\-.]', '_', raw_fname)
+            safe_name = f"{uuid.uuid4().hex[:6]}_{clean_fname}"
+            saved_file_path = str(UPLOADS_DIR / safe_name)
+            
+            # Stream in chunks to conserve memory on Render
+            with open(saved_file_path, "wb") as f_out:
+                while chunk := await file.read(1024 * 1024):  # 1MB chunks
+                    f_out.write(chunk)
 
-    cfg = warning_service.get_config()
-    api_key = gemini_api_key or cfg.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
+        cfg = warning_service.get_config()
+        api_key = gemini_api_key or cfg.get("gemini_api_key") or os.getenv("GEMINI_API_KEY")
 
-    # Transcribe & format
-    structured_data = transcribe_and_structure_video(
-        file_path=saved_file_path,
-        transcript_text=transcript_text,
-        api_key=api_key
-    )
+        # Transcribe & format
+        structured_data = transcribe_and_structure_video(
+            file_path=saved_file_path,
+            transcript_text=transcript_text,
+            api_key=api_key
+        )
 
-    if project_name:
-        structured_data["meeting_info"]["project"] = project_name
-    if meeting_date:
-        structured_data["meeting_info"]["date"] = meeting_date
-    structured_data["meeting_info"]["prepared_by"] = "App.com.mm"
+        if not isinstance(structured_data, dict):
+            structured_data = dict(SAMPLE_MEETING_DATA)
 
-    minute_id = f"mm-{uuid.uuid4().hex[:8]}"
-    structured_data["id"] = minute_id
-    structured_data["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        if "meeting_info" not in structured_data or not isinstance(structured_data["meeting_info"], dict):
+            structured_data["meeting_info"] = {}
 
-    # Generate PDF
-    pdf_path = generate_meeting_minute_pdf(structured_data)
-    pdf_filename = Path(pdf_path).name
-    structured_data["pdf_url"] = f"/pdfs/{pdf_filename}"
+        if project_name and project_name.strip():
+            structured_data["meeting_info"]["project"] = project_name.strip()
+        elif not structured_data["meeting_info"].get("project") or structured_data["meeting_info"]["project"] == "Untitled Project":
+            if file and file.filename:
+                base_name = Path(file.filename).stem
+                clean_title = re.sub(r'[_\-]+', ' ', base_name).strip()
+                structured_data["meeting_info"]["project"] = clean_title or "Meeting Discussion"
+            else:
+                structured_data["meeting_info"]["project"] = "Meeting Discussion"
 
-    # Save to history
-    history = load_meeting_minutes()
-    history.insert(0, structured_data)
-    save_meeting_minutes(history)
+        if meeting_date and meeting_date.strip():
+            structured_data["meeting_info"]["date"] = meeting_date.strip()
+        elif not structured_data["meeting_info"].get("date"):
+            structured_data["meeting_info"]["date"] = datetime.now().strftime("%d/%m/%Y")
 
-    return {
-        "status": "success",
-        "minute": structured_data,
-        "pdf_url": f"/pdfs/{pdf_filename}"
-    }
+        structured_data["meeting_info"]["prepared_by"] = "App.com.mm"
+
+        minute_id = f"mm-{uuid.uuid4().hex[:8]}"
+        structured_data["id"] = minute_id
+        structured_data["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        # Generate PDF
+        pdf_filename = f"Meeting_Minute_{minute_id}.pdf"
+        try:
+            pdf_path = generate_meeting_minute_pdf(structured_data, pdf_filename)
+            structured_data["pdf_url"] = f"/pdfs/{pdf_filename}"
+        except Exception as pdf_err:
+            logger.error(f"PDF creation failed: {pdf_err}", exc_info=True)
+            structured_data["pdf_url"] = ""
+
+        # Save to history
+        history = load_meeting_minutes()
+        history.insert(0, structured_data)
+        save_meeting_minutes(history)
+
+        return {
+            "status": "success",
+            "minute": structured_data,
+            "pdf_url": structured_data.get("pdf_url", ""),
+            "download_url": f"/api/meeting-minutes/{minute_id}/download-pdf"
+        }
+    except Exception as e:
+        logger.error(f"Upload and transcribe failed: {e}", exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": f"Transcribe failed: {str(e)}"}
+        )
 
 @app.post("/api/meeting-minutes/{minute_id}/pdf")
 async def export_minute_pdf(minute_id: str):

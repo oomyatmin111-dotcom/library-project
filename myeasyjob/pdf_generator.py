@@ -71,25 +71,30 @@ def render_html_to_pdf(html_content: str, output_filename: str) -> str:
     return str(output_pdf_path)
 
 def generate_meeting_minute_pdf(minute_dict: dict, filename: str = None) -> str:
+    import re
     if not filename:
-        proj_slug = minute_dict.get("meeting_info", {}).get("project", "meeting").replace(" ", "_")
+        raw_slug = str(minute_dict.get("meeting_info", {}).get("project", "meeting"))
+        proj_slug = re.sub(r'[^\w\-]', '_', raw_slug)[:35]
         filename = f"Meeting_Minute_{proj_slug}_{uuid.uuid4().hex[:6]}.pdf"
     template = env.get_template("meeting_minute.html")
     html_content = template.render(minute=minute_dict)
     return render_html_to_pdf(html_content, filename)
 
 def generate_project_report_pdf(report_dict: dict, filename: str = None) -> str:
+    import re
     if not filename:
-        proj_slug = report_dict.get("project_name", "project").replace(" ", "_")
+        raw_slug = str(report_dict.get("project_name", "project"))
+        proj_slug = re.sub(r'[^\w\-]', '_', raw_slug)[:35]
         filename = f"Project_Report_{proj_slug}_{uuid.uuid4().hex[:6]}.pdf"
     template = env.get_template("project_report.html")
     html_content = template.render(report=report_dict)
     return render_html_to_pdf(html_content, filename)
 
 def generate_daily_work_report_pdf(report_dict: dict, filename: str = None) -> str:
+    import re
     if not filename:
-        name_slug = report_dict.get("name", "Report").replace(" ", "_")
-        date_slug = report_dict.get("date", "Today").replace("-", "_").replace("/", "_")
+        name_slug = re.sub(r'[^\w\-]', '_', str(report_dict.get("name", "Report")))[:25]
+        date_slug = re.sub(r'[^\w\-]', '_', str(report_dict.get("date", "Today")))[:15]
         filename = f"Daily_Work_Report_{name_slug}_{date_slug}_{uuid.uuid4().hex[:6]}.pdf"
     template = env.get_template("daily_work_report.html")
     html_content = template.render(report=report_dict)
