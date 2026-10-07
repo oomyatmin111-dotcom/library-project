@@ -80,6 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn btn-secondary btn-sm" onclick="openMinuteDetailModal('${m.id}')">
               🔍 View Details & Edit
             </button>
+            <button class="btn btn-secondary btn-sm" onclick="copyMinuteNumberedText('${m.id}')" title="နံပါတ်စဉ်ဖြင့် Text ကူးယူမည်">
+              📋 Copy Text
+            </button>
             <button class="btn btn-danger btn-sm" onclick="deleteMeetingMinute('${m.id}')" title="မှတ်တမ်းနှင့် PDF ဖျက်ရန်">
               🗑️ Delete
             </button>
@@ -88,6 +91,141 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }).join("");
   }
+
+  function toBurmeseNumerals(num) {
+    const burmeseDigits = ["၀", "၁", "၂", "၃", "၄", "၅", "၆", "၇", "၈", "၉"];
+    return String(num).replace(/[0-9]/g, d => burmeseDigits[parseInt(d)]);
+  }
+
+  function downloadTextFile(filename, text) {
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function formatMeetingMinuteAsNumberedText(m, numStyle = "myanmar") {
+    const isMm = (numStyle === "myanmar");
+    const toNum = (n) => isMm ? toBurmeseNumerals(n) : String(n);
+    const info = m.meeting_info || {};
+
+    const lines = [
+      "============================================================",
+      "📋 အစည်းအဝေး မှတ်တမ်း (Meeting Minutes - App.com.mm)",
+      "============================================================",
+      "",
+      `${isMm ? "၁" : "1"}။ အစည်းအဝေး အချက်အလက် (Meeting Information):`,
+      `   • Project: ${info.project || "-"}`,
+      `   • Meeting Type: ${info.meeting_type || "-"}`,
+      `   • Date: ${info.date || "-"}`,
+      `   • Prepared By: ${info.prepared_by || "App.com.mm"}`,
+      "",
+      `${isMm ? "၂" : "2"}။ တက်ရောက်သူများ (Attendees):`
+    ];
+
+    if (m.attendees && m.attendees.length > 0) {
+      m.attendees.forEach((a, i) => lines.push(`   ${toNum(i + 1)}. ${a}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၃" : "3"}။ ရည်ရွယ်ချက် (Purpose):`);
+    if (m.purpose && m.purpose.length > 0) {
+      m.purpose.forEach((p, i) => lines.push(`   ${toNum(i + 1)}. ${p}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၄" : "4"}။ ဆွေးနွေးချက်များ (Discussion Points):`);
+    if (m.discussion_points && m.discussion_points.length > 0) {
+      m.discussion_points.forEach((d, i) => {
+        if (typeof d === "string") lines.push(`   ${toNum(i + 1)}. ${d}`);
+        else if (d && d.topic) {
+          lines.push(`   ${toNum(i + 1)}. ${d.topic}`);
+          if (d.sub_items) {
+            d.sub_items.forEach((s) => lines.push(`      - ${s}`));
+          }
+        }
+      });
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၅" : "5"}။ ဆုံးဖြတ်ချက်များ (Decisions):`);
+    if (m.decisions && m.decisions.length > 0) {
+      m.decisions.forEach((dec, i) => lines.push(`   ${toNum(i + 1)}. ${dec}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၆" : "6"}။ ဆောင်ရွက်ရန် တာဝန်များ (Action Items):`);
+    if (m.action_items_grouped && m.action_items_grouped.length > 0) {
+      m.action_items_grouped.forEach((grp) => {
+        lines.push(`   [${grp.team}]`);
+        (grp.items || []).forEach((it, ii) => lines.push(`     ${toNum(ii + 1)}. ${it}`));
+      });
+    } else if (m.action_items && m.action_items.length > 0) {
+      m.action_items.forEach((it, i) => lines.push(`   ${toNum(i + 1)}. ${it}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၇" : "7"}။ ကြုံတွေ့နေရသော အခက်အခဲနှင့် စိန်ခေါ်မှုများ (Issues & Risks):`);
+    if (m.issues_risks && m.issues_risks.length > 0) {
+      m.issues_risks.forEach((iss, i) => lines.push(`   ${toNum(i + 1)}. ${iss}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    lines.push(`${isMm ? "၈" : "8"}။ ရှင်းလင်းရန် လိုအပ်ဆဲ အချက်များ (Pending Clarifications):`);
+    if (m.pending_clarifications && m.pending_clarifications.length > 0) {
+      m.pending_clarifications.forEach((cl, i) => lines.push(`   ${toNum(i + 1)}. ${cl}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("");
+
+    const next = m.next_meeting || {};
+    lines.push(`${isMm ? "၉" : "9"}။ နောက်တစ်ကြိမ် အစည်းအဝေး အစီအစဉ် (Next Meeting):`);
+    lines.push(`   • Agenda: ${next.agenda || "-"}`);
+    lines.push(`   • Date: ${next.date || "-"}`);
+    lines.push("");
+
+    lines.push(`${isMm ? "၁၀" : "10"}။ အခြားမှတ်ချက်များ (Additional Notes):`);
+    if (m.additional_notes && m.additional_notes.length > 0) {
+      m.additional_notes.forEach((nt, i) => lines.push(`   ${toNum(i + 1)}. ${nt}`));
+    } else {
+      lines.push("   (မရှိပါ)");
+    }
+    lines.push("============================================================");
+
+    return lines.join("\n");
+  }
+
+  window.copyMinuteNumberedText = function(id) {
+    const m = minutesCache.find(x => x.id === id);
+    if (!m) {
+      alert("အစည်းအဝေးမှတ်တမ်း ရှာမတွေ့ပါ");
+      return;
+    }
+    const text = formatMeetingMinuteAsNumberedText(m, "myanmar");
+    navigator.clipboard.writeText(text).then(() => {
+      alert("✅ အစည်းအဝေးမှတ်တမ်းကို နံပါတ်စဉ်များဖြင့် Text အဖြစ် Clipboard သို့ အောင်မြင်စွာ ကူးယူပြီးပါပြီ!\n(Telegram, Viber စသည်တို့သို့ တိုက်ရိုက် Paste ချနိုင်ပါသည်)");
+    }).catch(err => {
+      alert("Copy failed: " + err.message);
+    });
+  };
 
   window.exportMinutePdf = function(id) {
     triggerDirectDownload(`/api/meeting-minutes/${id}/download-pdf`);
@@ -444,6 +582,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   if (btnModalDeleteMinute) btnModalDeleteMinute.addEventListener("click", handleDeleteFromModal);
   if (btnModalDeleteMinuteBottom) btnModalDeleteMinuteBottom.addEventListener("click", handleDeleteFromModal);
+
+  const btnModalCopyText = document.getElementById("btn-modal-copy-text");
+  if (btnModalCopyText) {
+    btnModalCopyText.addEventListener("click", () => {
+      const id = document.getElementById("edit-minute-id")?.value;
+      if (id) {
+        window.copyMinuteNumberedText(id);
+      }
+    });
+  }
 
   const btnClearAllMinutes = document.getElementById("btn-clear-all-minutes");
   if (btnClearAllMinutes) btnClearAllMinutes.addEventListener("click", window.clearAllMeetingMinutes);
@@ -813,11 +961,155 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (dailyReportForm) {
-    dailyReportForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const payload = getDailyWorkReportPayload();
+  function formatDailyReportAsNumberedText(p, numStyle = "myanmar") {
+    const isMm = (numStyle === "myanmar");
+    const toNum = (n) => isMm ? toBurmeseNumerals(n) : String(n);
 
+    const headerBorder = "============================================================";
+    const subBorder = "------------------------------------------------------------";
+
+    const lines = [
+      headerBorder,
+      `📋 DAILY WORK REPORT (နေ့စဉ် အလုပ်လုပ်ငန်း အစီရင်ခံစာ)`,
+      headerBorder,
+      "",
+      `${isMm ? "၁" : "1"}။ အစီရင်ခံသူ အချက်အလက် (Reporter Profile):`,
+      `   • အမည် (Name): ${p.name || "-"}`,
+      `   • ဌာန (Department): ${p.department || "-"}`,
+      `   • ရာထူး (Position): ${p.position || "-"}`,
+      `   • ရက်စွဲ (Date): ${p.date || "-"}`,
+      `   • အစီရင်ခံစာ အမျိုးအစား: ${p.report_type || "Daily Report"}`,
+      "",
+      headerBorder,
+      `${isMm ? "၂" : "2"}။ လုပ်ငန်းဆောင်ရွက်ချက်များ (Work Details - နံပါတ်စဉ်အလိုက်):`,
+      headerBorder,
+      ""
+    ];
+
+    if (!p.work_details || p.work_details.length === 0) {
+      lines.push("   (ဆောင်ရွက်ချက် မရှိသေးပါ / No work items entered)");
+    } else {
+      p.work_details.forEach((item, idx) => {
+        const itemNum = toNum(idx + 1);
+        const prefix = isMm ? `(${itemNum})` : `${itemNum}.`;
+        lines.push(`${prefix} ပရောဂျက် (Project): ${item.project || "General"}`);
+        lines.push(`    • လုပ်ဆောင်ချက် (Task): ${item.task || "-"}`);
+        lines.push(`    • အခြေအနေ (Status): [ ${item.status || "In Progress"} ]`);
+        if (item.meeting_minute_ref) {
+          lines.push(`    • အစည်းအဝေး ကိုးကား (Meeting Ref): ${item.meeting_minute_ref}`);
+        }
+        if (item.remark) {
+          lines.push(`    • မှတ်ချက် (Remark): ${item.remark}`);
+        }
+        if (item.tomorrow_plan) {
+          lines.push(`    • မနက်ဖြန် အစီအစဉ် (Tomorrow Plan): ${item.tomorrow_plan}`);
+        }
+        lines.push("");
+      });
+    }
+
+    lines.push(subBorder);
+    lines.push(`${isMm ? "၃" : "3"}။ အကျဉ်းချုပ် (Work Summary):`);
+    lines.push(`   • စုစုပေါင်း လုပ်ငန်းတာဝန် (Total Tasks): ${toNum((p.work_details || []).length)} ခု`);
+    const doneCount = (p.work_details || []).filter(w => w.status === "Done").length;
+    const inProgCount = (p.work_details || []).filter(w => w.status === "In Progress").length;
+    lines.push(`   • ပြီးစီးပြီး (Done): ${toNum(doneCount)} ခု`);
+    lines.push(`   • လုပ်ဆောင်ဆဲ (In Progress): ${toNum(inProgCount)} ခု`);
+    lines.push(headerBorder);
+
+    return lines.join("\n");
+  }
+
+  function renderActiveNumberedReportText(autoCopy = false) {
+    const textOutput = document.getElementById("report-text-output");
+    if (!textOutput) return "";
+    const payload = getDailyWorkReportPayload();
+    const styleRadio = document.querySelector('input[name="report-num-style"]:checked');
+    const numStyle = styleRadio ? styleRadio.value : "myanmar";
+
+    const formatted = formatDailyReportAsNumberedText(payload, numStyle);
+    textOutput.value = formatted;
+
+    if (autoCopy) {
+      navigator.clipboard.writeText(formatted).then(() => {
+        showReportCopySuccess();
+      }).catch(err => {
+        console.warn("Clipboard copy failed", err);
+      });
+    }
+
+    return formatted;
+  }
+
+  function showReportCopySuccess() {
+    const statusEl = document.getElementById("report-copy-status");
+    if (statusEl) {
+      statusEl.style.display = "inline";
+      setTimeout(() => {
+        statusEl.style.display = "none";
+      }, 3000);
+    }
+  }
+
+  // Radio listener for numbering style
+  document.querySelectorAll('input[name="report-num-style"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      renderActiveNumberedReportText(false);
+    });
+  });
+
+  // Daily report submit -> Primary action: Generate Numbered Text & Copy
+  if (dailyReportForm) {
+    dailyReportForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = renderActiveNumberedReportText(true);
+      alert("✅ Numbered Text Report ကို အောင်မြင်စွာ ထုတ်ယူပြီး Clipboard သို့ ကူးယူလိုက်ပါပြီ!\n(Telegram, Viber စသည်တို့သို့ တိုက်ရိုက် Paste ချနိုင်ပါသည်)");
+    });
+  }
+
+  // Copy Preview Text button
+  const btnCopyPreviewText = document.getElementById("btn-copy-preview-text");
+  if (btnCopyPreviewText) {
+    btnCopyPreviewText.addEventListener("click", () => {
+      const textOutput = document.getElementById("report-text-output");
+      if (!textOutput || !textOutput.value) {
+        renderActiveNumberedReportText(false);
+      }
+      const text = textOutput ? textOutput.value : "";
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          showReportCopySuccess();
+          alert("✅ Report စာသားကို Clipboard သို့ အောင်မြင်စွာ ကူးယူပြီးပါပြီ!");
+        }).catch(err => {
+          alert("Copy failed: " + err.message);
+        });
+      }
+    });
+  }
+
+  // Download .txt file button
+  const btnDownloadPreviewTxt = document.getElementById("btn-download-preview-txt");
+  if (btnDownloadPreviewTxt) {
+    btnDownloadPreviewTxt.addEventListener("click", () => {
+      const textOutput = document.getElementById("report-text-output");
+      if (!textOutput || !textOutput.value) {
+        renderActiveNumberedReportText(false);
+      }
+      const text = textOutput ? textOutput.value : "";
+      if (text) {
+        const payload = getDailyWorkReportPayload();
+        const safeName = (payload.name || "User").replace(/\s+/g, "_");
+        const safeDate = (payload.date || "Report").replace(/[\/\\]/g, "-");
+        downloadTextFile(`Daily_Work_Report_${safeName}_${safeDate}.txt`, text);
+      }
+    });
+  }
+
+  // Optional: Generate PDF button
+  const btnGenerateDailyPdf = document.getElementById("btn-generate-daily-pdf");
+  if (btnGenerateDailyPdf) {
+    btnGenerateDailyPdf.addEventListener("click", async () => {
+      const payload = getDailyWorkReportPayload();
       reportAbortCtrl = new AbortController();
       startReportProgress();
 
@@ -839,22 +1131,8 @@ document.addEventListener("DOMContentLoaded", () => {
           }, 1200);
 
           const dlUrl = data.download_url || (data.filename ? `/api/reports/download-pdf/${data.filename}` : data.pdf_url);
-          reportPreviewBox.innerHTML = `
-            <div class="report-result-card" style="padding: 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
-              <h3 style="color: #166534; margin-bottom: 6px;">🎉 DAILY WORK REPORT PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!</h3>
-              <p style="font-size: 13.5px; color: #1e293b;"><b>Reporter:</b> ${escapeHtml(payload.name)} (${escapeHtml(payload.position)})</p>
-              <p style="font-size: 13.5px; color: #1e293b;"><b>Date:</b> ${escapeHtml(payload.date)} | <b>Total Tasks:</b> ${payload.work_details.length}</p>
-              <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                <a href="${dlUrl}" class="btn btn-primary" download>
-                  📥 Download Report PDF Directly
-                </a>
-                <a href="${data.pdf_url}" target="_blank" class="btn btn-secondary">
-                  👁️ Open In Browser
-                </a>
-              </div>
-            </div>
-          `;
           triggerDirectDownload(dlUrl);
+          alert("✅ Daily Report PDF ဒေါင်းလုဒ်လုပ်နေပါသည်...");
         }
       } catch (err) {
         stopReportProgress();
@@ -868,38 +1146,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       }
-    });
-  }
-
-  if (btnCopyDailyText) {
-    btnCopyDailyText.addEventListener("click", () => {
-      const p = getDailyWorkReportPayload();
-      let lines = [
-        "DAILY WORK REPORT\n",
-        `Name: ${p.name}`,
-        `Department: ${p.department}`,
-        `Position: ${p.position}`,
-        `Date: ${p.date}`,
-        `Report Type: ${p.report_type}\n`,
-        "Work Details:\n"
-      ];
-
-      p.work_details.forEach((item, idx) => {
-        lines.push(`${idx + 1}. Project: ${item.project}`);
-        lines.push(`Task: ${item.task}`);
-        lines.push(`Status: ${item.status}`);
-        lines.push(`Remark: ${item.remark}`);
-        lines.push(`Tomorrow Plan: ${item.tomorrow_plan}`);
-        if (item.meeting_minute_ref) lines.push(item.meeting_minute_ref);
-        lines.push("");
-      });
-
-      const fullText = lines.join("\n");
-      navigator.clipboard.writeText(fullText).then(() => {
-        alert("Daily Work Report စာသားကို Clipboard သို့ အောင်မြင်စွာ ကူးယူပြီးပါပြီ!");
-      }).catch(() => {
-        alert("Clipboard copy failed");
-      });
     });
   }
 
@@ -1394,4 +1640,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadWarningsAndProjects();
   loadSettings();
   loadGeneratedPdfList();
+  renderActiveNumberedReportText(false);
 });

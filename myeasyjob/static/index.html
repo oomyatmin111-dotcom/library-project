@@ -224,12 +224,12 @@
               </div>
             </div>
 
-            <div class="btn-group">
-              <button type="submit" class="btn btn-primary" id="btn-generate-daily-report">
-                📄 Generate & Download Daily Report PDF
+            <div class="btn-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button type="submit" class="btn btn-primary" id="btn-generate-daily-text" style="background: #2563eb; font-weight: 600; flex: 1;">
+                📝 Generate Numbered Text Report (နံပါတ်စဉ်ဖြင့် Text ထုတ်မည်)
               </button>
-              <button type="button" class="btn btn-secondary" id="btn-copy-daily-text">
-                📋 Copy Formatted Text
+              <button type="button" class="btn btn-secondary" id="btn-generate-daily-pdf">
+                📄 Generate PDF (Option)
               </button>
             </div>
 
@@ -255,16 +255,39 @@
           </form>
         </div>
 
-        <!-- Report Preview / Download Link -->
+        <!-- Report Preview & Numbered Text Card -->
         <div class="card">
-          <div class="card-header">
-            <h2>📑 အစီရင်ခံစာ အစမ်းကြည့်ရှုခြင်း (Report Preview)</h2>
-            <p>PDF မထုတ်မီ အချက်အလက်များ စစ်ဆေးနိုင်ပါသည်</p>
-          </div>
-          <div id="report-preview-box" class="preview-box">
-            <div class="empty-state">
-              <p>ဘယ်ဘက်ရှိ Form တွင် ဖြည့်သွင်းပြီး "Generate & Download Report PDF" ကို နှိပ်ပါ</p>
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <h2>📝 နံပါတ်စဉ် အစီရင်ခံစာ (Numbered Text Report)</h2>
+              <p style="margin: 0;">PDF ဖိုင် မလိုဘဲ စာသားကို နံပါတ်စဉ်ဖြင့် တိုက်ရိုက် ကြည့်ရှု/ကူးယူနိုင်ပါသည်</p>
             </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-copy-preview-text" style="font-weight: 600;">
+                📋 Copy Text
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-download-preview-txt">
+                💾 Download .txt
+              </button>
+            </div>
+          </div>
+
+          <!-- Numbering style selector & copy status -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 8px 12px; background: #f1f5f9; border-radius: 6px; font-size: 13px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-weight: 600; color: #334155;">နံပါတ်စဉ် ပုံစံ:</span>
+              <label style="margin: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <input type="radio" name="report-num-style" value="myanmar" checked> မြန်မာဂဏန်း (၁၊ ၂၊ ၃...)
+              </label>
+              <label style="margin: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                <input type="radio" name="report-num-style" value="english"> အင်္ဂလိပ်ဂဏန်း (1, 2, 3...)
+              </label>
+            </div>
+            <span id="report-copy-status" style="font-size: 12px; color: #166534; font-weight: 600; display: none;">✅ Copied to clipboard!</span>
+          </div>
+
+          <div id="report-preview-box" class="preview-box" style="padding: 0; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;">
+            <textarea id="report-text-output" readonly style="width: 100%; height: 440px; font-family: 'Segoe UI', 'Pyidaungsu', monospace; font-size: 13.5px; line-height: 1.6; padding: 14px; border: none; background: #f8fafc; color: #0f172a; resize: vertical; box-sizing: border-box; outline: none; border-radius: 6px;" placeholder="Report စာသားများ ဤနေရာတွင် ပေါ်လာပါမည်..."></textarea>
           </div>
         </div>
       </div>
@@ -573,7 +596,10 @@
             </div>
             <b>App.com.mm (Business IT Solution)</b>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-modal-copy-text" style="font-weight: 600;" title="နံပါတ်စဉ်ဖြင့် Text ကူးယူမည်">
+              📋 Copy Numbered Text
+            </button>
             <a id="btn-modal-direct-download" href="#" class="btn btn-primary btn-sm" download style="background: #16a34a; border-color: #16a34a; font-weight: 600;">
               📥 Download PDF
             </a>
