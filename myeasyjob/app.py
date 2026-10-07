@@ -57,17 +57,11 @@ def load_meeting_minutes() -> List[dict]:
     try:
         with open(MEETING_MINUTES_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if not data:
-                sample = dict(SAMPLE_MEETING_DATA)
-                sample["id"] = "mm-lms-001"
-                sample["created_at"] = "02/05/2026 10:00"
-                save_meeting_minutes([sample])
-                return [sample]
+            if data is None:
+                return []
             return data
     except Exception:
-        sample = dict(SAMPLE_MEETING_DATA)
-        sample["id"] = "mm-lms-001"
-        return [sample]
+        return []
 
 def save_meeting_minutes(minutes: List[dict]):
     with open(MEETING_MINUTES_FILE, "w", encoding="utf-8") as f:
@@ -226,6 +220,48 @@ async def update_meeting_minute(minute_id: str, updated_minute: dict):
         "download_url": f"/api/meeting-minutes/{minute_id}/download-pdf"
     }
 
+@app.delete("/api/meeting-minutes/{minute_id}")
+async def delete_meeting_minute(minute_id: str):
+    history = load_meeting_minutes()
+    target = None
+    new_history = []
+    for item in history:
+        if item.get("id") == minute_id:
+            target = item
+        else:
+            new_history.append(item)
+    
+    if not target:
+        raise HTTPException(status_code=404, detail="Meeting minute not found")
+        
+    save_meeting_minutes(new_history)
+    
+    if target.get("pdf_url"):
+        pdf_name = target["pdf_url"].split("/")[-1]
+        pdf_file = OUTPUT_DIR / pdf_name
+        if pdf_file.exists():
+            try:
+                pdf_file.unlink()
+            except Exception:
+                pass
+                
+    return {"status": "success", "message": "Meeting minute and PDF deleted"}
+
+@app.post("/api/meeting-minutes/clear-all")
+async def clear_all_meeting_minutes():
+    history = load_meeting_minutes()
+    for item in history:
+        if item.get("pdf_url"):
+            pdf_name = item["pdf_url"].split("/")[-1]
+            pdf_file = OUTPUT_DIR / pdf_name
+            if pdf_file.exists():
+                try:
+                    pdf_file.unlink()
+                except Exception:
+                    pass
+    save_meeting_minutes([])
+    return {"status": "success", "message": "All meeting minutes and PDFs cleared"}
+
 @app.get("/api/reports/download-pdf/{filename}")
 async def download_report_pdf(filename: str):
     pdf_path = OUTPUT_DIR / filename
@@ -360,19 +396,14 @@ async def test_telegram_alert():
     ok, message = warning_service.send_telegram_alert(msg)
     return {"success": ok, "message": message}
 
-# ==================== CONFIGURATION ====================
+# ==================== CONFIGURATION & DATA MANAGEMENT ====================
 
 @app.get("/api/config")
 async def get_config():
     cfg = warning_service.get_config()
-    # Mask secrets
-    masked = dict(cfg)
-    if masked.get("gemini_api_key"):
-        masked["gemini_api_key_set"] = True
-        masked["gemini_api_key"] = masked["gemini_api_key"][:4] + "..." + masked["gemini_api_key"][-4:]
-    if masked.get("telegram_bot_token"):
-        masked["telegram_bot_token_set"] = True
-    return masked
+    cfg["gemini_api_key_set"] = bool(cfg.get("gemini_api_key"))
+    cfg["telegram_bot_token_set"] = bool(cfg.get("telegram_bot_token"))
+    return cfg
 
 @app.post("/api/config")
 async def save_config(config: NotificationConfig):
@@ -383,7 +414,67 @@ async def save_config(config: NotificationConfig):
         if v == "" and current.get(k):
             new_cfg[k] = current[k]
     warning_service.save_config(new_cfg)
-    return {"status": "success", "message": "Settings saved successfully"}
+    return {"status": "success", "message": "Settings saved successfully", "config": new_cfg}
+
+@app.get("/api/pdfs")
+async def list_generated_pdfs():
+    files = []
+    if OUTPUT_DIR.exists():
+        for p in OUTPUT_DIR.glob("*.pdf"):
+            st = p.stat()
+            files.append({
+                "filename": p.name,
+                "size_kb": round(st.st_size / 1024, 1),
+                "modified": datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                "url": f"/pdfs/{p.name}",
+                "download_url": f"/api/reports/download-pdf/{p.name}"
+            })
+    files.sort(key=lambda x: x["modified"], reverse=True)
+    return files
+
+@app.delete("/api/pdfs/{filename}")
+async def delete_pdf_file(filename: str):
+    safe_name = Path(filename).name
+    target_file = OUTPUT_DIR / safe_name
+    if not target_file.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    try:
+        target_file.unlink()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "success", "message": f"{safe_name} deleted successfully"}
+
+@app.post("/api/pdfs/clear-all")
+async def clear_all_generated_pdfs():
+    deleted_count = 0
+    if OUTPUT_DIR.exists():
+        for p in OUTPUT_DIR.glob("*.pdf"):
+            try:
+                p.unlink()
+                deleted_count += 1
+            except Exception:
+                pass
+    return {"status": "success", "message": f"{deleted_count} PDF files cleared"}
+
+@app.post("/api/data/clear-all")
+async def clear_all_data():
+    # 1. Clear meeting minutes
+    save_meeting_minutes([])
+    # 2. Delete all PDFs in generated_pdfs
+    if OUTPUT_DIR.exists():
+        for p in OUTPUT_DIR.glob("*.pdf"):
+            try:
+                p.unlink()
+            except Exception:
+                pass
+    # 3. Clear uploads
+    if UPLOADS_DIR.exists():
+        for u in UPLOADS_DIR.glob("*"):
+            try:
+                u.unlink()
+            except Exception:
+                pass
+    return {"status": "success", "message": "All data and PDFs cleared successfully"}
 
 if __name__ == "__main__":
     import uvicorn

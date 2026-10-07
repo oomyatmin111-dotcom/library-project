@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderMinutesList(minutes) {
     minutesCache = minutes || [];
     if (!minutes || minutes.length === 0) {
-      minutesList.innerHTML = `<div class="empty-state"><p>မှတ်တမ်းများ မရှိသေးပါ</p></div>`;
+      minutesList.innerHTML = `<div class="empty-state"><p>မှတ်တမ်းများ မရှိသေးပါ (No Meeting Minutes)</p></div>`;
       return;
     }
     minutesList.innerHTML = minutes.map(m => {
@@ -80,6 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn btn-secondary btn-sm" onclick="openMinuteDetailModal('${m.id}')">
               🔍 View Details & Edit
             </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMeetingMinute('${m.id}')" title="မှတ်တမ်းနှင့် PDF ဖျက်ရန်">
+              🗑️ Delete
+            </button>
           </div>
         </div>
       `;
@@ -88,6 +91,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.exportMinutePdf = function(id) {
     triggerDirectDownload(`/api/meeting-minutes/${id}/download-pdf`);
+  };
+
+  window.deleteMeetingMinute = async function(id) {
+    if (!confirm("⚠️ ဤအစည်းအဝေးမှတ်တမ်းနှင့် ဆက်စပ်နေသော PDF ဖိုင်ကို အပြီးတိုင် ဖျက်ပစ်ရန် သေချာပါသလား?")) return;
+    try {
+      const res = await fetch(`/api/meeting-minutes/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ မှတ်တမ်းနှင့် PDF ဖိုင်ကို အောင်မြင်စွာ ဖျက်ပစ်လိုက်ပါပြီ!");
+        const modal = document.getElementById("minute-edit-modal");
+        if (modal && !modal.classList.contains("hidden")) {
+          modal.classList.add("hidden");
+        }
+        await loadMeetingMinutes();
+        if (typeof loadGeneratedPdfList === "function") {
+          await loadGeneratedPdfList();
+        }
+      } else {
+        alert("Delete failed: " + (data.detail || "Error"));
+      }
+    } catch (err) {
+      alert("Delete error: " + err.message);
+    }
+  };
+
+  window.clearAllMeetingMinutes = async function() {
+    if (!confirm("⚠️ အစည်းအဝေးမှတ်တမ်းများနှင့် ထွက်ရှိထားသော PDF ဖိုင်များအားလုံးကို အပြီးတိုင် ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ)")) return;
+    try {
+      const res = await fetch("/api/meeting-minutes/clear-all", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ " + (data.message || "အစည်းအဝေးမှတ်တမ်းအားလုံးကို ရှင်းလင်းပြီးပါပြီ"));
+        await loadMeetingMinutes();
+        if (typeof loadGeneratedPdfList === "function") {
+          await loadGeneratedPdfList();
+        }
+      } else {
+        alert("Clear failed: " + (data.detail || "Error"));
+      }
+    } catch (err) {
+      alert("Clear error: " + err.message);
+    }
   };
 
   function renderMinuteDocumentPreview(m) {
@@ -389,6 +434,20 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCancelMinuteEdit) btnCancelMinuteEdit.addEventListener("click", closeMinuteModal);
   if (minuteModalBackdrop) minuteModalBackdrop.addEventListener("click", closeMinuteModal);
 
+  const btnModalDeleteMinute = document.getElementById("btn-modal-delete-minute");
+  const btnModalDeleteMinuteBottom = document.getElementById("btn-modal-delete-minute-bottom");
+  const handleDeleteFromModal = () => {
+    const id = document.getElementById("edit-minute-id")?.value;
+    if (id) {
+      window.deleteMeetingMinute(id);
+    }
+  };
+  if (btnModalDeleteMinute) btnModalDeleteMinute.addEventListener("click", handleDeleteFromModal);
+  if (btnModalDeleteMinuteBottom) btnModalDeleteMinuteBottom.addEventListener("click", handleDeleteFromModal);
+
+  const btnClearAllMinutes = document.getElementById("btn-clear-all-minutes");
+  if (btnClearAllMinutes) btnClearAllMinutes.addEventListener("click", window.clearAllMeetingMinutes);
+
   // Edit form submit
   if (minuteEditForm) {
     minuteEditForm.addEventListener("submit", async (e) => {
@@ -565,6 +624,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (notes) formData.append("transcript_text", notes);
     if (fileInput.files.length > 0) {
       formData.append("file", fileInput.files[0]);
+    }
+
+    const currentApiKey = document.getElementById("cfg-gemini-key")?.value?.trim();
+    if (currentApiKey) {
+      formData.append("gemini_api_key", currentApiKey);
+    } else {
+      try {
+        const stored = JSON.parse(localStorage.getItem("app_suite_config_v1") || "{}");
+        if (stored.gemini_api_key) formData.append("gemini_api_key", stored.gemini_api_key);
+      } catch (e) {}
     }
 
     transcribeAbortCtrl = new AbortController();
@@ -1015,66 +1084,244 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ================= 4. SETTINGS =================
+  // ================= 4. SETTINGS & DATA MANAGEMENT =================
   const settingsForm = document.getElementById("settings-form");
   const btnTestTg = document.getElementById("btn-test-tg");
+  const btnToggleKey = document.getElementById("btn-toggle-key-visibility");
+  const SETTINGS_STORAGE_KEY = "app_suite_config_v1";
+
+  function applyConfigToForm(cfg) {
+    if (!cfg) return;
+    const elKey = document.getElementById("cfg-gemini-key");
+    const elTgTok = document.getElementById("cfg-tg-token");
+    const elTgChat = document.getElementById("cfg-tg-chat");
+    const elWebhook = document.getElementById("cfg-webhook-url");
+    const elSmtpServer = document.getElementById("cfg-smtp-server");
+    const elSmtpPort = document.getElementById("cfg-smtp-port");
+    const elSmtpUser = document.getElementById("cfg-smtp-user");
+    const elSmtpPass = document.getElementById("cfg-smtp-pass");
+    const elRecipient = document.getElementById("cfg-recipient-email");
+
+    if (elKey && cfg.gemini_api_key) elKey.value = cfg.gemini_api_key;
+    if (elTgTok && cfg.telegram_bot_token) elTgTok.value = cfg.telegram_bot_token;
+    if (elTgChat && cfg.telegram_chat_id) elTgChat.value = cfg.telegram_chat_id;
+    if (elWebhook && cfg.webhook_url) elWebhook.value = cfg.webhook_url;
+    if (elSmtpServer && cfg.smtp_server) elSmtpServer.value = cfg.smtp_server;
+    if (elSmtpPort && cfg.smtp_port) elSmtpPort.value = cfg.smtp_port;
+    if (elSmtpUser && cfg.smtp_user) elSmtpUser.value = cfg.smtp_user;
+    if (elSmtpPass && cfg.smtp_password) elSmtpPass.value = cfg.smtp_password;
+    if (elRecipient && cfg.alert_recipient_email) elRecipient.value = cfg.alert_recipient_email;
+  }
 
   async function loadSettings() {
+    // 1. Immediately restore from localStorage so inputs are populated without wait
+    let localCfg = {};
+    try {
+      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (stored) {
+        localCfg = JSON.parse(stored);
+        applyConfigToForm(localCfg);
+      }
+    } catch (e) {
+      console.warn("Could not load local config cache", e);
+    }
+
+    // 2. Fetch from server API
     try {
       const res = await fetch("/api/config");
       const cfg = await res.json();
-      if (cfg.gemini_api_key_set) document.getElementById("cfg-gemini-key").placeholder = "•••••••••••• (Configured)";
-      if (cfg.telegram_bot_token_set) document.getElementById("cfg-tg-token").placeholder = "•••••••••••• (Configured)";
-      if (cfg.telegram_chat_id) document.getElementById("cfg-tg-chat").value = cfg.telegram_chat_id;
-      if (cfg.webhook_url) document.getElementById("cfg-webhook-url").value = cfg.webhook_url;
-      if (cfg.smtp_server) document.getElementById("cfg-smtp-server").value = cfg.smtp_server;
-      if (cfg.smtp_port) document.getElementById("cfg-smtp-port").value = cfg.smtp_port;
-      if (cfg.smtp_user) document.getElementById("cfg-smtp-user").value = cfg.smtp_user;
-      if (cfg.alert_recipient_email) document.getElementById("cfg-recipient-email").value = cfg.alert_recipient_email;
+      const merged = {
+        gemini_api_key: cfg.gemini_api_key || localCfg.gemini_api_key || "",
+        telegram_bot_token: cfg.telegram_bot_token || localCfg.telegram_bot_token || "",
+        telegram_chat_id: cfg.telegram_chat_id || localCfg.telegram_chat_id || "",
+        webhook_url: cfg.webhook_url || localCfg.webhook_url || "",
+        smtp_server: cfg.smtp_server || localCfg.smtp_server || "",
+        smtp_port: cfg.smtp_port || localCfg.smtp_port || 587,
+        smtp_user: cfg.smtp_user || localCfg.smtp_user || "",
+        smtp_password: cfg.smtp_password || localCfg.smtp_password || "",
+        alert_recipient_email: cfg.alert_recipient_email || localCfg.alert_recipient_email || ""
+      };
+
+      applyConfigToForm(merged);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+
+      // If server had missing keys but localStorage had them (e.g. server restart), sync silently
+      if (localCfg.gemini_api_key && !cfg.gemini_api_key) {
+        fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(merged)
+        }).catch(e => console.warn("Background config sync failed", e));
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Config fetch error:", err);
     }
   }
 
-  settingsForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const payload = {
-      gemini_api_key: document.getElementById("cfg-gemini-key").value,
-      telegram_bot_token: document.getElementById("cfg-tg-token").value,
-      telegram_chat_id: document.getElementById("cfg-tg-chat").value,
-      webhook_url: document.getElementById("cfg-webhook-url").value,
-      smtp_server: document.getElementById("cfg-smtp-server").value,
-      smtp_port: parseInt(document.getElementById("cfg-smtp-port").value) || 587,
-      smtp_user: document.getElementById("cfg-smtp-user").value,
-      smtp_password: document.getElementById("cfg-smtp-pass").value,
-      alert_recipient_email: document.getElementById("cfg-recipient-email").value
-    };
+  if (btnToggleKey) {
+    btnToggleKey.addEventListener("click", () => {
+      const keyInput = document.getElementById("cfg-gemini-key");
+      if (keyInput) {
+        if (keyInput.type === "password") {
+          keyInput.type = "text";
+          btnToggleKey.innerText = "🙈 Hide";
+        } else {
+          keyInput.type = "password";
+          btnToggleKey.innerText = "👁️ Show";
+        }
+      }
+    });
+  }
 
-    try {
-      const res = await fetch("/api/config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      alert(data.message || "Saved successfully");
-    } catch (err) {
-      alert("Save failed: " + err.message);
-    }
-  });
+  if (settingsForm) {
+    settingsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const payload = {
+        gemini_api_key: document.getElementById("cfg-gemini-key")?.value?.trim() || "",
+        telegram_bot_token: document.getElementById("cfg-tg-token")?.value?.trim() || "",
+        telegram_chat_id: document.getElementById("cfg-tg-chat")?.value?.trim() || "",
+        webhook_url: document.getElementById("cfg-webhook-url")?.value?.trim() || "",
+        smtp_server: document.getElementById("cfg-smtp-server")?.value?.trim() || "",
+        smtp_port: parseInt(document.getElementById("cfg-smtp-port")?.value) || 587,
+        smtp_user: document.getElementById("cfg-smtp-user")?.value?.trim() || "",
+        smtp_password: document.getElementById("cfg-smtp-pass")?.value?.trim() || "",
+        alert_recipient_email: document.getElementById("cfg-recipient-email")?.value?.trim() || ""
+      };
 
-  btnTestTg.addEventListener("click", async () => {
+      try {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("LocalStorage save error", e);
+      }
+
+      try {
+        const res = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        alert("✅ Settings များကို Browser နှင့် Server ပေါ်တွင် အမြဲတမ်း သိမ်းဆည်းလိုက်ပါပြီ!\n(နောက်တစ်ကြိမ် Refresh ပြုလုပ်လည်း ပြန်ထည့်စရာမလိုတော့ပါ)");
+      } catch (err) {
+        alert("Save failed: " + err.message);
+      }
+    });
+  }
+
+  if (btnTestTg) {
+    btnTestTg.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/warnings/test-telegram", { method: "POST" });
+        const data = await res.json();
+        alert("Telegram Test: " + (data.message || JSON.stringify(data)));
+      } catch (err) {
+        alert("Test failed: " + err.message);
+      }
+    });
+  }
+
+  // ================= 5. PDF MANAGEMENT & DATA CLEAR =================
+  async function loadGeneratedPdfList() {
+    const listEl = document.getElementById("pdf-files-list");
+    if (!listEl) return;
     try {
-      const res = await fetch("/api/warnings/test-telegram", { method: "POST" });
+      const res = await fetch("/api/pdfs");
       const data = await res.json();
-      alert("Telegram Test: " + data.message);
+      const pdfs = data.pdfs || [];
+      if (pdfs.length === 0) {
+        listEl.innerHTML = `<p style="font-size: 12px; color: #94a3b8; text-align: center; padding: 12px 0;">PDF ဖိုင်များ မရှိသေးပါ (No PDF files found)</p>`;
+        return;
+      }
+      listEl.innerHTML = pdfs.map(pdf => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px;">
+          <div style="min-width: 0; flex: 1; margin-right: 10px;">
+            <div style="font-size: 13px; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(pdf.filename)}">
+              📄 ${escapeHtml(pdf.filename)}
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+              ${pdf.size_kb} KB &nbsp;|&nbsp; ${escapeHtml(pdf.modified || "")}
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <a href="${pdf.url}" class="btn btn-secondary btn-sm" download title="Download PDF" style="padding: 3px 8px; font-size: 12px;">📥</a>
+            <button type="button" class="btn btn-danger btn-sm" onclick="deletePdfFile('${escapeHtml(pdf.filename)}')" title="Delete this PDF" style="padding: 3px 8px; font-size: 12px;">🗑️</button>
+          </div>
+        </div>
+      `).join("");
     } catch (err) {
-      alert("Test failed: " + err.message);
+      console.error("Failed to load PDF list", err);
+      listEl.innerHTML = `<p style="font-size: 12px; color: #ef4444; text-align: center;">PDF စာရင်းရယူ၍ မရပါ</p>`;
     }
-  });
+  }
+
+  window.deletePdfFile = async function(filename) {
+    if (!confirm(`⚠️ PDF ဖိုင် "${filename}" ကို အပြီးတိုင် ဖျက်ပစ်ရန် သေချာပါသလား?`)) return;
+    try {
+      const res = await fetch(`/api/pdfs/${encodeURIComponent(filename)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ PDF ဖိုင်ကို အောင်မြင်စွာ ဖျက်ပစ်လိုက်ပါပြီ!");
+        await loadGeneratedPdfList();
+        await loadMeetingMinutes();
+      } else {
+        alert("Delete failed: " + (data.detail || "Error"));
+      }
+    } catch (err) {
+      alert("Delete error: " + err.message);
+    }
+  };
+
+  const btnRefreshPdfs = document.getElementById("btn-refresh-pdfs");
+  if (btnRefreshPdfs) btnRefreshPdfs.addEventListener("click", loadGeneratedPdfList);
+
+  const btnClearAllPdfs = document.getElementById("btn-clear-all-pdfs");
+  if (btnClearAllPdfs) {
+    btnClearAllPdfs.addEventListener("click", async () => {
+      if (!confirm("⚠️ ထွက်ရှိထားသော PDF ဖိုင်များအားလုံးကို အပြီးတိုင် ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ)")) return;
+      try {
+        const res = await fetch("/api/pdfs/clear-all", { method: "POST" });
+        const data = await res.json();
+        if (res.ok) {
+          alert("✅ " + (data.message || "PDF ဖိုင်အားလုံးကို ရှင်းလင်းပြီးပါပြီ"));
+          await loadGeneratedPdfList();
+          await loadMeetingMinutes();
+        } else {
+          alert("Clear failed: " + (data.detail || "Error"));
+        }
+      } catch (err) {
+        alert("Clear error: " + err.message);
+      }
+    });
+  }
+
+  const btnClearMinutesSettings = document.getElementById("btn-clear-minutes-settings");
+  if (btnClearMinutesSettings) {
+    btnClearMinutesSettings.addEventListener("click", window.clearAllMeetingMinutes);
+  }
+
+  const btnFullDataClear = document.getElementById("btn-full-data-clear");
+  if (btnFullDataClear) {
+    btnFullDataClear.addEventListener("click", async () => {
+      if (!confirm("⚠️ သတိပေးချက်: အစည်းအဝေးမှတ်တမ်းများ၊ PDF ဖိုင်များ၊ Uploaded ဖိုင်များ အားလုံးကို အပြီးတိုင် ဖျက်ပစ်ပါတော့မည်!\n\nဆက်လက်လုပ်ဆောင်ရန် သေချာပါသလား?")) return;
+      try {
+        const res = await fetch("/api/data/clear-all", { method: "POST" });
+        const data = await res.json();
+        if (res.ok) {
+          alert("✅ အချက်အလက်နှင့် PDF အားလုံးကို အောင်မြင်စွာ Reset ပြုလုပ်ပြီးပါပြီ!");
+          await loadMeetingMinutes();
+          await loadGeneratedPdfList();
+        } else {
+          alert("Clear failed: " + (data.detail || "Error"));
+        }
+      } catch (err) {
+        alert("Clear error: " + err.message);
+      }
+    });
+  }
 
   // Initial loads
   loadMeetingMinutes();
   loadWarningsAndProjects();
   loadSettings();
+  loadGeneratedPdfList();
 });
