@@ -70,16 +70,22 @@ class WarningService:
     def get_projects(self) -> List[Dict[str, Any]]:
         if not self.projects_file.exists():
             self.save_projects(DEFAULT_PROJECTS)
-            return DEFAULT_PROJECTS
+            return list(DEFAULT_PROJECTS)
         try:
             with open(self.projects_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if not data:
-                    self.save_projects(DEFAULT_PROJECTS)
-                    return DEFAULT_PROJECTS
+                if data is None:
+                    return []
                 return data
         except Exception:
-            return DEFAULT_PROJECTS
+            return []
+
+    def clear_all_projects(self) -> None:
+        self.save_projects([])
+
+    def restore_default_projects(self) -> List[Dict[str, Any]]:
+        self.save_projects(DEFAULT_PROJECTS)
+        return list(DEFAULT_PROJECTS)
 
     def save_projects(self, projects: List[Dict[str, Any]]) -> None:
         with open(self.projects_file, "w", encoding="utf-8") as f:

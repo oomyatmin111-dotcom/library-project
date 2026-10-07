@@ -990,6 +990,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderProjectsTable(projects) {
+    if (!projects || projects.length === 0) {
+      projectsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: #64748b; padding: 36px 16px;">
+            <p style="font-size: 14px; margin-bottom: 10px; color: #475569;">📭 သတ်မှတ်ထားသော ပရောဂျက် / Deadline များ မရှိသေးပါ (No Projects or Deadlines)</p>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('btn-open-add-proj').click()">➕ ပရောဂျက် အသစ်ထည့်မည်</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="restoreDefaultProjects()">🔄 Sample ပြန်ယူမည်</button>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     projectsTableBody.innerHTML = projects.map(p => {
       const a = p.analysis || {};
       let badgeClass = "info";
@@ -1000,14 +1015,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return `
         <tr>
           <td>
-            <strong>${p.name}</strong><br>
-            <small style="color: #64748b;">${p.description || ""}</small>
+            <strong>${escapeHtml(p.name)}</strong><br>
+            <small style="color: #64748b;">${escapeHtml(p.description || "")}</small>
           </td>
-          <td>${p.client || "-"}</td>
-          <td>${p.start_date}</td>
-          <td><strong>${p.deadline}</strong></td>
+          <td>${escapeHtml(p.client || "-")}</td>
+          <td>${escapeHtml(p.start_date || "-")}</td>
+          <td><strong>${escapeHtml(p.deadline || "-")}</strong></td>
           <td>
-            <span class="badge ${badgeClass}">${a.alert_message || p.status}</span>
+            <span class="badge ${badgeClass}">${escapeHtml(a.alert_message || p.status)}</span>
           </td>
           <td>
             <div style="font-size: 12px; margin-bottom: 3px;">${p.progress_percentage || 0}%</div>
@@ -1016,7 +1031,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="deleteProject('${p.id}')">🗑️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')" title="ပရောဂျက်နှင့် Deadline ဖျက်ရန်">🗑️</button>
           </td>
         </tr>
       `;
@@ -1024,12 +1039,50 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.deleteProject = async function(id) {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+    if (!confirm("⚠️ ဤပရောဂျက်နှင့် သက်ဆိုင်ရာ Deadline ကို ဖျက်ပစ်ရန် သေချာပါသလား?")) return;
     try {
-      await fetch(`/api/projects/${id}`, { method: "DELETE" });
-      await loadWarningsAndProjects();
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ ပရောဂျက်နှင့် Deadline ကို အောင်မြင်စွာ ဖျက်ပြီးပါပြီ!");
+        await loadWarningsAndProjects();
+      } else {
+        alert("Delete failed: " + (data.detail || "Error"));
+      }
     } catch (err) {
       alert("Delete failed: " + err.message);
+    }
+  };
+
+  window.clearAllDeadlines = async function() {
+    if (!confirm("⚠️ သတိပေးချက်: စာရင်းသွင်းထားသော ပရောဂျက်များနှင့် Deadline အားလုံးကို အပြီးတိုင် ရှင်းလင်း/ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရပါ)")) return;
+    try {
+      const res = await fetch("/api/projects/clear-all", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ " + (data.message || "ပရောဂျက်များနှင့် Deadline အားလုံးကို ရှင်းလင်းပြီးပါပြီ"));
+        await loadWarningsAndProjects();
+      } else {
+        alert("Clear failed: " + (data.detail || "Error"));
+      }
+    } catch (err) {
+      alert("Clear error: " + err.message);
+    }
+  };
+
+  window.restoreDefaultProjects = async function() {
+    if (!confirm("နမူနာ ပရောဂျက်များနှင့် Deadline များကို ပြန်လည် ထည့်သွင်းလိုပါသလား?")) return;
+    try {
+      const res = await fetch("/api/projects/restore-defaults", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("✅ နမူနာ ပရောဂျက်များ အောင်မြင်စွာ ပြန်လည်ရယူပြီးပါပြီ!");
+        await loadWarningsAndProjects();
+      } else {
+        alert("Restore failed: " + (data.detail || "Error"));
+      }
+    } catch (err) {
+      alert("Restore error: " + err.message);
     }
   };
 
@@ -1299,16 +1352,33 @@ document.addEventListener("DOMContentLoaded", () => {
     btnClearMinutesSettings.addEventListener("click", window.clearAllMeetingMinutes);
   }
 
+  // Clear Deadlines & Projects handlers
+  const btnClearAllDeadlines = document.getElementById("btn-clear-all-deadlines");
+  if (btnClearAllDeadlines) btnClearAllDeadlines.addEventListener("click", window.clearAllDeadlines);
+
+  const btnCardClearDeadlines = document.getElementById("btn-card-clear-deadlines");
+  if (btnCardClearDeadlines) btnCardClearDeadlines.addEventListener("click", window.clearAllDeadlines);
+
+  const btnClearDeadlinesSettings = document.getElementById("btn-clear-deadlines-settings");
+  if (btnClearDeadlinesSettings) btnClearDeadlinesSettings.addEventListener("click", window.clearAllDeadlines);
+
+  const btnRestoreDefaultProjects = document.getElementById("btn-restore-default-projects");
+  if (btnRestoreDefaultProjects) btnRestoreDefaultProjects.addEventListener("click", window.restoreDefaultProjects);
+
+  const btnRestoreDeadlinesSettings = document.getElementById("btn-restore-deadlines-settings");
+  if (btnRestoreDeadlinesSettings) btnRestoreDeadlinesSettings.addEventListener("click", window.restoreDefaultProjects);
+
   const btnFullDataClear = document.getElementById("btn-full-data-clear");
   if (btnFullDataClear) {
     btnFullDataClear.addEventListener("click", async () => {
-      if (!confirm("⚠️ သတိပေးချက်: အစည်းအဝေးမှတ်တမ်းများ၊ PDF ဖိုင်များ၊ Uploaded ဖိုင်များ အားလုံးကို အပြီးတိုင် ဖျက်ပစ်ပါတော့မည်!\n\nဆက်လက်လုပ်ဆောင်ရန် သေချာပါသလား?")) return;
+      if (!confirm("⚠️ သတိပေးချက်: အစည်းအဝေးမှတ်တမ်းများ၊ ပရောဂျက် Deadline များ၊ PDF ဖိုင်များ၊ Uploaded ဖိုင်များ အားလုံးကို အပြီးတိုင် ဖျက်ပစ်ပါတော့မည်!\n\nဆက်လက်လုပ်ဆောင်ရန် သေချာပါသလား?")) return;
       try {
         const res = await fetch("/api/data/clear-all", { method: "POST" });
         const data = await res.json();
         if (res.ok) {
           alert("✅ အချက်အလက်နှင့် PDF အားလုံးကို အောင်မြင်စွာ Reset ပြုလုပ်ပြီးပါပြီ!");
           await loadMeetingMinutes();
+          await loadWarningsAndProjects();
           await loadGeneratedPdfList();
         } else {
           alert("Clear failed: " + (data.detail || "Error"));

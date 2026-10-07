@@ -278,12 +278,18 @@
           <h2>⏰ Project Start Date & Deadline Warning Dashboard</h2>
           <p>ပရောဂျက်များ၏ Start Date နှင့် Deadline များကို အချိန်နှင့်တပြေးညီ စောင့်ကြည့်ပြီး သတိပေးချက် ထုတ်ပေးပါသည်</p>
         </div>
-        <div class="action-buttons">
+        <div class="action-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn btn-primary" id="btn-open-add-proj">
             ➕ Add New Project
           </button>
           <button class="btn btn-warning" id="btn-dispatch-alerts">
             🔔 Dispatch Alerts (Telegram/Email)
+          </button>
+          <button class="btn btn-danger" id="btn-clear-all-deadlines" style="background: #ef4444; border-color: #ef4444;" title="ပရောဂျက်များနှင့် Deadline အားလုံးကို ရှင်းလင်းမည်">
+            🧹 Clear All Deadlines
+          </button>
+          <button class="btn btn-secondary" id="btn-restore-default-projects" title="နမူနာ ပရောဂျက်များ ပြန်ယူမည်">
+            🔄 Restore Samples
           </button>
         </div>
       </div>
@@ -295,8 +301,14 @@
 
       <!-- Projects Table -->
       <div class="card">
-        <div class="card-header">
-          <h2>📁 Projects & Dates Overview</h2>
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <h2>📁 Projects & Dates Overview</h2>
+            <p style="margin: 0;">သတ်မှတ်ထားသော ပရောဂျက်များနှင့် Deadline များ</p>
+          </div>
+          <button type="button" class="btn btn-danger btn-sm" id="btn-card-clear-deadlines" style="background: #ef4444; border-color: #ef4444;">
+            🧹 Clear All Deadlines
+          </button>
         </div>
         <div class="table-responsive">
           <table class="data-table">
@@ -427,10 +439,25 @@
             </button>
           </div>
 
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <b style="color: #991b1b; font-size: 13.5px;">🧹 Clear All Project Deadlines & Alerts</b>
+              <p style="font-size: 12px; color: #7f1d1d; margin-top: 2px;">ပရောဂျက်စာရင်းနှင့် သတ်မှတ်ထားသော Deadline ရက်စွဲများအားလုံးကို ရှင်းလင်းမည်</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-restore-deadlines-settings" title="နမူနာ ပရောဂျက်များ ပြန်ယူမည်">
+                🔄 Sample ပြန်ယူမည်
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" id="btn-clear-deadlines-settings">
+                ဖျက်မည် (Clear Deadlines)
+              </button>
+            </div>
+          </div>
+
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fff1f2; border-radius: 6px; border: 1px solid #fda4af; flex-wrap: wrap; gap: 10px;">
             <div>
               <b style="color: #881337; font-size: 13.5px;">⚠️ Full Data Reset (ဒေတာအားလုံး အသစ်ပြန်စရန်)</b>
-              <p style="font-size: 12px; color: #9f1239; margin-top: 2px;">Minutes များ၊ Upload များ၊ PDF ဖိုင်များအားလုံးကို ရှင်းလင်းပြီး စနစ်ကို Clean Reset ပြုလုပ်မည်</p>
+              <p style="font-size: 12px; color: #9f1239; margin-top: 2px;">Minutes များ၊ Deadline များ၊ Upload များ၊ PDF ဖိုင်များအားလုံးကို ရှင်းလင်းပြီး စနစ်ကို Clean Reset ပြုလုပ်မည်</p>
             </div>
             <button type="button" class="btn btn-danger btn-sm" id="btn-full-data-clear" style="background: #be123c; border-color: #be123c;">
               🚨 Full Reset

@@ -378,7 +378,17 @@ async def delete_project(project_id: str):
     projects = warning_service.get_projects()
     new_projects = [p for p in projects if p["id"] != project_id]
     warning_service.save_projects(new_projects)
-    return {"status": "success"}
+    return {"status": "success", "message": "Project deleted"}
+
+@app.post("/api/projects/clear-all")
+async def clear_all_projects():
+    warning_service.clear_all_projects()
+    return {"status": "success", "message": "All projects and deadlines cleared successfully"}
+
+@app.post("/api/projects/restore-defaults")
+async def restore_default_projects():
+    projects = warning_service.restore_default_projects()
+    return {"status": "success", "message": "Default sample projects restored successfully", "projects": projects}
 
 @app.get("/api/warnings")
 async def get_warnings():
@@ -460,21 +470,23 @@ async def clear_all_generated_pdfs():
 async def clear_all_data():
     # 1. Clear meeting minutes
     save_meeting_minutes([])
-    # 2. Delete all PDFs in generated_pdfs
+    # 2. Clear projects and deadlines
+    warning_service.clear_all_projects()
+    # 3. Delete all PDFs in generated_pdfs
     if OUTPUT_DIR.exists():
         for p in OUTPUT_DIR.glob("*.pdf"):
             try:
                 p.unlink()
             except Exception:
                 pass
-    # 3. Clear uploads
+    # 4. Clear uploads
     if UPLOADS_DIR.exists():
         for u in UPLOADS_DIR.glob("*"):
             try:
                 u.unlink()
             except Exception:
                 pass
-    return {"status": "success", "message": "All data and PDFs cleared successfully"}
+    return {"status": "success", "message": "All data, deadlines, and PDFs cleared successfully"}
 
 if __name__ == "__main__":
     import uvicorn
