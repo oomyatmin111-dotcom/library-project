@@ -132,7 +132,7 @@ async def upload_and_transcribe(
         structured_data["meeting_info"]["project"] = project_name
     if meeting_date:
         structured_data["meeting_info"]["date"] = meeting_date
-    structured_data["meeting_info"]["prepared_by"] = "My Easy Job"
+    structured_data["meeting_info"]["prepared_by"] = "App.com.mm"
 
     minute_id = f"mm-{uuid.uuid4().hex[:8]}"
     structured_data["id"] = minute_id

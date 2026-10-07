@@ -20,10 +20,10 @@
       print-color-adjust: exact;
     }
     body {
-      font-family: 'Myanmar Text', 'Pyidaungsu', 'Padauk', 'Segoe UI', Arial, sans-serif;
+      font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', Arial, sans-serif;
       font-size: 11pt;
-      line-height: 1.7;
-      color: #1e293b;
+      line-height: 1.65;
+      color: #111827;
       background-color: #ffffff;
       margin: 0;
       padding: 0;
@@ -31,76 +31,81 @@
     .header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
     .header-table td {
-      vertical-align: middle;
       padding: 0;
     }
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
-    .logo-badge {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    .logo-box {
+      width: 74px;
+      height: 74px;
+      min-width: 74px;
+      background-color: #0b4578;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
-      font-weight: 800;
-      font-size: 24px;
-      border: 3px solid #38bdf8;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      text-align: center;
-      line-height: 52px;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+    .logo-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
     }
     .company-title {
-      font-size: 20pt;
-      font-weight: 700;
-      color: #0f172a;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      font-size: 24pt;
+      font-weight: 550;
+      color: #111827;
       letter-spacing: -0.5px;
       line-height: 1.1;
       margin: 0;
     }
     .company-subtitle {
-      font-size: 11pt;
-      color: #475569;
-      margin-top: 3px;
-      font-weight: 500;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      font-size: 13.5pt;
+      color: #1f2937;
+      margin-top: 4px;
+      font-weight: 400;
     }
     .company-meta {
-      text-align: right;
-      font-size: 9.5pt;
-      color: #334155;
-      line-height: 1.5;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      font-size: 9.8pt;
+      color: #111827;
+      line-height: 1.45;
     }
     .company-meta a {
-      color: #0284c7;
+      color: #2563eb;
       text-decoration: underline;
     }
     .header-divider {
-      height: 3px;
-      background: linear-gradient(90deg, #0284c7 0%, #2563eb 50%, #38bdf8 100%);
-      border-radius: 2px;
-      margin: 12px 0 28px 0;
+      height: 2.5px;
+      background-color: #4a7bb5;
+      margin: 14px 0 24px 0;
+      border: none;
     }
     .doc-title {
-      font-size: 24pt;
+      font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', sans-serif;
+      font-size: 25pt;
       font-weight: 700;
-      color: #0f172a;
-      margin: 20px 0 22px 0;
-      letter-spacing: -0.5px;
+      color: #000000;
+      margin: 22px 0 18px 0;
+      line-height: 1.25;
+      letter-spacing: -0.2px;
     }
     .section-title {
-      font-size: 12.5pt;
-      font-weight: 700;
-      color: #3b5998;
+      font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif;
+      font-size: 13.5pt;
+      font-weight: 600;
+      color: #4a729a;
       margin-top: 22px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       page-break-after: avoid;
     }
     .section-divider {
@@ -110,12 +115,13 @@
     }
     ul {
       margin: 6px 0 14px 0;
-      padding-left: 24px;
+      padding-left: 22px;
       list-style-type: disc;
     }
     li {
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       line-height: 1.65;
+      color: #000000;
     }
     ul.sub-list {
       margin-top: 4px;
@@ -125,19 +131,20 @@
     }
     .team-header {
       font-weight: 600;
-      color: #1e293b;
+      color: #111827;
       margin-top: 6px;
       margin-bottom: 4px;
     }
     .meta-list {
       list-style-type: disc;
-      padding-left: 24px;
+      padding-left: 22px;
     }
     .meta-list li {
-      margin-bottom: 5px;
+      margin-bottom: 4px;
+      color: #000000;
     }
-    .meta-list b {
-      color: #0f172a;
+    .meta-list li.item-prepared {
+      margin-top: 14px;
     }
     .page-break {
       page-break-before: always;
@@ -146,23 +153,25 @@
 </head>
 <body>
 
-  <!-- Header matching the PDF layout with 'My Easy Job' -->
+  <!-- Header matching user's design with App.com.mm logo -->
   <table class="header-table">
     <tr>
-      <td style="width: 55%;">
+      <td style="width: 54%; vertical-align: middle;">
         <div class="logo-container">
-          <div class="logo-badge">EJ</div>
+          <div class="logo-box">
+            <img src="https://app.com.mm/wp-content/uploads/2021/04/app-logo.png" alt="App.com.mm Logo">
+          </div>
           <div>
-            <div class="company-title">My Easy Job</div>
+            <div class="company-title">App.com.mm</div>
             <div class="company-subtitle">Business IT Solution</div>
           </div>
         </div>
       </td>
-      <td style="width: 45%;">
+      <td style="width: 46%; vertical-align: top; padding-left: 20px;">
         <div class="company-meta">
           <div>No.12, Min Nandar Main Road,</div>
           <div>Dawbon Tsp, Yangon</div>
-          <div>www.myeasyjob.com.mm, info@myeasyjob.com.mm</div>
+          <div><a href="https://www.app.com.mm" target="_blank">www.app.com.mm</a>, <a href="mailto:info@app.com.mm">info@app.com.mm</a></div>
           <div>Hotline : +95 9 421 014 055</div>
         </div>
       </td>
@@ -177,10 +186,10 @@
   <!-- ၁။ အစည်းအဝေး အချက်အလက် -->
   <div class="section-title">၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)</div>
   <ul class="meta-list">
-    <li><b>Project:</b> {{ minute.meeting_info.project }}</li>
-    <li><b>Meeting Type:</b> {{ minute.meeting_info.meeting_type }}</li>
-    <li><b>Date:</b> {{ minute.meeting_info.date }}</li>
-    <li><b>Prepared By:</b> {{ minute.meeting_info.prepared_by or "My Easy Job" }}</li>
+    <li>Project: {{ minute.meeting_info.project }}</li>
+    <li>Meeting Type: {{ minute.meeting_info.meeting_type }}</li>
+    <li>Date: {{ minute.meeting_info.date }}</li>
+    <li class="item-prepared">Prepared By: {{ minute.meeting_info.prepared_by or "App.com.mm" }}</li>
   </ul>
 
   <hr class="section-divider">

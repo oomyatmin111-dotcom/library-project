@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div class="minute-meta">
             <b>Topic:</b> ${escapeHtml(info.meeting_type || "Discussion")}<br>
-            <b>Prepared By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}
+            <b>Prepared By:</b> ${escapeHtml(info.prepared_by || "App.com.mm")}
           </div>
           <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
             <a href="${downloadUrl}" class="btn btn-primary btn-sm" download>
@@ -97,14 +97,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let actionsHtml = "";
     if (m.action_items_grouped && m.action_items_grouped.length > 0) {
       actionsHtml = m.action_items_grouped.map(grp => `
-        <div style="font-weight: 600; color: #1e293b; margin-top: 8px; margin-bottom: 4px;">• ${escapeHtml(grp.team)}</div>
-        <ul style="margin: 4px 0 10px 20px; list-style-type: circle; color: #334155;">
+        <div style="font-weight: 600; color: #111827; margin-top: 8px; margin-bottom: 4px;">• ${escapeHtml(grp.team)}</div>
+        <ul style="margin: 4px 0 10px 22px; list-style-type: circle; color: #111827;">
           ${(grp.items || []).map(it => `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`).join("")}
         </ul>
       `).join("");
     } else if (m.action_items && m.action_items.length > 0) {
       actionsHtml = `
-        <ul style="margin: 6px 0 12px 20px; list-style-type: disc; color: #334155;">
+        <ul style="margin: 6px 0 12px 22px; list-style-type: disc; color: #111827;">
           ${m.action_items.map(it => `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`).join("")}
         </ul>
       `;
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const renderList = (items) => {
       if (!items || items.length === 0) return `<p style="color: #94a3b8; font-style: italic; margin-left: 10px;">မရှိပါ</p>`;
       return `
-        <ul style="margin: 6px 0 12px 20px; list-style-type: disc; color: #334155;">
+        <ul style="margin: 6px 0 12px 22px; list-style-type: disc; color: #111827;">
           ${items.map(it => {
             if (typeof it === 'string') return `<li style="margin-bottom: 4px;">${escapeHtml(it)}</li>`;
             if (it && it.topic) {
@@ -131,99 +131,127 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     return `
-      <!-- Preview Header -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%); color: #fff; font-weight: 800; font-size: 20px; width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            EJ
-          </div>
-          <div>
-            <div style="font-size: 19px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">My Easy Job</div>
-            <div style="font-size: 11.5px; font-weight: 600; color: #0284c7; text-transform: uppercase; letter-spacing: 0.8px;">Business IT Solution</div>
-          </div>
-        </div>
-        <div style="text-align: right; font-size: 11.5px; color: #64748b; line-height: 1.5;">
-          <div><b>Reported By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}</div>
-          <div><b>Contact:</b> info@myeasyjob.com</div>
-          <div><b>Website:</b> <a href="https://www.myeasyjob.com" target="_blank" style="color: #0284c7;">www.myeasyjob.com</a></div>
-        </div>
-      </div>
+      <!-- Preview Header matching user's exact design -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+        <tr>
+          <td style="width: 54%; vertical-align: middle;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <div style="width: 74px; height: 74px; min-width: 74px; background-color: #0b4578; display: inline-flex; align-items: center; justify-content: center; padding: 6px; box-sizing: border-box;">
+                <img src="https://app.com.mm/wp-content/uploads/2021/04/app-logo.png" alt="App.com.mm Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; display: block;">
+              </div>
+              <div>
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 24pt; font-weight: 550; color: #111827; letter-spacing: -0.5px; line-height: 1.1; margin: 0;">App.com.mm</div>
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 13.5pt; color: #1f2937; margin-top: 4px; font-weight: 400;">Business IT Solution</div>
+              </div>
+            </div>
+          </td>
+          <td style="width: 46%; vertical-align: top; padding-left: 20px;">
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.8pt; color: #111827; line-height: 1.45;">
+              <div>No.12, Min Nandar Main Road,</div>
+              <div>Dawbon Tsp, Yangon</div>
+              <div><a href="https://www.app.com.mm" target="_blank" style="color: #2563eb; text-decoration: underline;">www.app.com.mm</a>, <a href="mailto:info@app.com.mm" style="color: #2563eb; text-decoration: underline;">info@app.com.mm</a></div>
+              <div>Hotline : +95 9 421 014 055</div>
+            </div>
+          </td>
+        </tr>
+      </table>
 
-      <div style="text-align: center; margin: 16px 0 22px 0;">
-        <h2 style="font-size: 21px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">အစည်းအဝေး မှတ်တမ်း</h2>
-        <div style="font-size: 14px; font-weight: 600; color: #2563eb;">Meeting Minute — ${escapeHtml(info.project || "Project")}</div>
+      <!-- Header Divider -->
+      <div style="height: 2.5px; background-color: #4a7bb5; margin: 14px 0 24px 0;"></div>
+
+      <!-- Main Title -->
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', sans-serif; font-size: 25pt; font-weight: 700; color: #000000; margin: 22px 0 18px 0; line-height: 1.25; letter-spacing: -0.2px;">
+        အစည်းအဝေး မှတ်တမ်း
       </div>
 
       <!-- 1. Meeting Info Box -->
-      <div style="background: #f1f5f9; border-left: 4px solid #2563eb; padding: 12px 16px; border-radius: 4px; margin-bottom: 18px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 8px;">၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)</div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: #1e293b;">
-          <div><b>Project Name:</b> ${escapeHtml(info.project || "")}</div>
-          <div><b>Date:</b> ${escapeHtml(info.date || "")}</div>
-          <div><b>Meeting Type:</b> ${escapeHtml(info.meeting_type || "")}</div>
-          <div><b>Prepared By:</b> ${escapeHtml(info.prepared_by || "My Easy Job")}</div>
-        </div>
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၁။ အစည်းအဝေး အချက်အလက် (Meeting Information)
       </div>
+      <ul style="list-style-type: disc; padding-left: 22px; margin: 6px 0 16px 0;">
+        <li style="margin-bottom: 4px; color: #000000;">Project: ${escapeHtml(info.project || "")}</li>
+        <li style="margin-bottom: 4px; color: #000000;">Meeting Type: ${escapeHtml(info.meeting_type || "")}</li>
+        <li style="margin-bottom: 4px; color: #000000;">Date: ${escapeHtml(info.date || "")}</li>
+        <li style="margin-top: 14px; margin-bottom: 4px; color: #000000;">Prepared By: ${escapeHtml(info.prepared_by || "App.com.mm")}</li>
+      </ul>
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 2. Attendees -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၂။ တက်ရောက်သူများ (Attendees)</div>
-        ${renderList(m.attendees)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၂။ တက်ရောက်သူများ (Attendees)
       </div>
+      ${renderList(m.attendees)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 3. Purpose -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၃။ ရည်ရွယ်ချက် (Purpose)</div>
-        ${renderList(m.purpose)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၃။ ရည်ရွယ်ချက် (Purpose)
       </div>
+      ${renderList(m.purpose)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 4. Discussions -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၄။ ဆွေးနွေးချက်များ (Discussion Points)</div>
-        ${renderList(m.discussion_points)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၄။ ဆွေးနွေးချက်များ (Discussion Points)
       </div>
+      ${renderList(m.discussion_points)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 5. Decisions -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၅။ ဆုံးဖြတ်ချက်များ (Decisions)</div>
-        ${renderList(m.decisions)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၅။ ဆုံးဖြတ်ချက်များ (Decisions)
       </div>
+      ${renderList(m.decisions)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 6. Action Items -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၆။ လုပ်ဆောင်ရန်တာဝန်များ (Action Items)</div>
-        ${actionsHtml}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၆။ လုပ်ဆောင်ရန်တာဝန်များ (Action Items)
       </div>
+      ${actionsHtml}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 7. Issues / Risks -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၇။ ပြဿနာ / အန္တရာယ်များ (Issues / Risks)</div>
-        ${renderList(m.issues_risks)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၇။ ပြဿနာ / အန္တရာယ်များ (Issues / Risks)
       </div>
+      ${renderList(m.issues_risks)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 8. Pending Clarifications -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၈။ အတည်ပြုရန်လိုအပ်ချက်များ (Pending Clarifications)</div>
-        ${renderList(m.pending_clarifications)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၈။ အတည်ပြုရန်လိုအပ်ချက်များ (Pending Clarifications)
       </div>
+      ${renderList(m.pending_clarifications)}
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 9. Next Meeting -->
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၉။ နောက်အစည်းအဝေး (Next Meeting)</div>
-        <div style="margin: 6px 0 10px 14px; font-size: 13px; color: #334155;">
-          <div><b>Agenda:</b> ${escapeHtml(m.next_meeting?.agenda || "မဖော်ပြထားပါ")}</div>
-          <div><b>Date:</b> ${escapeHtml(m.next_meeting?.date || "မဖော်ပြထားပါ")}</div>
-        </div>
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၉။ နောက်အစည်းအဝေး (Next Meeting)
       </div>
+      <ul style="list-style-type: disc; padding-left: 22px; margin: 6px 0 16px 0;">
+        <li style="margin-bottom: 4px; color: #000000;">Agenda: ${escapeHtml(m.next_meeting?.agenda || "မဖော်ပြထားပါ")}</li>
+        <li style="margin-bottom: 4px; color: #000000;">Date: ${escapeHtml(m.next_meeting?.date || "မဖော်ပြထားပါ")}</li>
+      </ul>
+
+      <hr style="border: none; border-top: 1px solid #cbd5e1; margin: 22px 0 16px 0;">
 
       <!-- 10. Additional Notes -->
-      <div style="margin-bottom: 22px;">
-        <div style="font-size: 13.5px; font-weight: 700; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">၁၀။ အခြားမှတ်ချက်များ (Additional Notes)</div>
-        ${renderList(m.additional_notes)}
+      <div style="font-family: 'Pyidaungsu', 'Myanmar Text', 'Padauk', 'Segoe UI', sans-serif; font-size: 13.5pt; font-weight: 600; color: #4a729a; margin-top: 22px; margin-bottom: 10px;">
+        ၁၀။ အခြားမှတ်ချက်များ (Additional Notes)
       </div>
+      ${renderList(m.additional_notes)}
 
       <!-- Bottom Quick Actions inside preview -->
-      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+      <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; border-top: 1px solid #e2e8f0; margin-top: 20px;">
         <button type="button" class="btn btn-secondary btn-sm" onclick="showEditMode()">
           ✏️ Edit This Minute (ပြင်ဆင်မည်)
         </button>
@@ -251,7 +279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("edit-min-project").value = info.project || "";
     document.getElementById("edit-min-date").value = info.date || "";
     document.getElementById("edit-min-type").value = info.meeting_type || "";
-    document.getElementById("edit-min-prepared").value = info.prepared_by || "My Easy Job";
+    document.getElementById("edit-min-prepared").value = info.prepared_by || "App.com.mm";
 
     document.getElementById("edit-min-attendees").value = (m.attendees || []).join("\n");
     document.getElementById("edit-min-purpose").value = (m.purpose || []).join("\n");
@@ -380,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
           project: document.getElementById("edit-min-project").value.trim(),
           date: document.getElementById("edit-min-date").value.trim(),
           meeting_type: document.getElementById("edit-min-type").value.trim(),
-          prepared_by: document.getElementById("edit-min-prepared").value.trim() || "My Easy Job"
+          prepared_by: document.getElementById("edit-min-prepared").value.trim() || "App.com.mm"
         },
         attendees: parseLines(document.getElementById("edit-min-attendees").value),
         purpose: parseLines(document.getElementById("edit-min-purpose").value),

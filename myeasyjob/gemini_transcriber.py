@@ -11,7 +11,7 @@ SAMPLE_MEETING_DATA = {
         "project": "Oo Ko - LMS",
         "meeting_type": "Feature Revision / UI Update Discussion",
         "date": "02/05/2026",
-        "prepared_by": "My Easy Job"
+        "prepared_by": "App.com.mm"
     },
     "attendees": [
         "Ko Oo",
