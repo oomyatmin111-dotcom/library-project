@@ -92,10 +92,34 @@
             </div>
           </form>
 
-          <!-- Loading Indicator -->
-          <div id="minute-loading" class="loading-state hidden">
-            <div class="spinner"></div>
-            <p id="minute-loading-text">Gemini AI ဖြင့် ဗီဒီယိုကို နားထောင်ပြီး အစည်းအဝေး မှတ်တမ်း PDF ဖန်တီးနေပါသည်...</p>
+          <!-- Live Progress Bar with Percentage & Cancel -->
+          <div id="minute-loading" class="processing-card hidden">
+            <div class="processing-header">
+              <div class="processing-title-row">
+                <div class="spinner-sm"></div>
+                <h3 id="minute-loading-title">Transcribing & Generating PDF...</h3>
+              </div>
+              <span class="percentage-badge" id="minute-progress-pct">0%</span>
+            </div>
+
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" id="minute-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <p class="processing-status-text" id="minute-loading-text">စတင် လုပ်ဆောင်နေပါသည်...</p>
+
+            <div class="step-breadcrumbs">
+              <span class="step-item" id="m-step-1">1. Upload</span> &rarr;
+              <span class="step-item" id="m-step-2">2. Audio Extraction</span> &rarr;
+              <span class="step-item" id="m-step-3">3. AI Transcribe</span> &rarr;
+              <span class="step-item" id="m-step-4">4. PDF Compile</span>
+            </div>
+
+            <div style="margin-top: 14px; text-align: right;">
+              <button type="button" class="btn btn-danger btn-sm" id="btn-cancel-transcribe">
+                ❌ Cancel Process
+              </button>
+            </div>
           </div>
         </div>
 
@@ -200,6 +224,26 @@
               <button type="button" class="btn btn-secondary" id="btn-copy-daily-text">
                 📋 Copy Formatted Text
               </button>
+            </div>
+
+            <!-- Daily Report Progress Card -->
+            <div id="report-loading" class="processing-card hidden" style="margin-top: 14px;">
+              <div class="processing-header">
+                <div class="processing-title-row">
+                  <div class="spinner-sm"></div>
+                  <h3>Generating Daily Report PDF...</h3>
+                </div>
+                <span class="percentage-badge" id="report-progress-pct">0%</span>
+              </div>
+              <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill" id="report-progress-fill" style="width: 0%;"></div>
+              </div>
+              <p class="processing-status-text" id="report-loading-text">PDF ဖန်တီးနေပါသည်...</p>
+              <div style="margin-top: 10px; text-align: right;">
+                <button type="button" class="btn btn-danger btn-sm" id="btn-cancel-report">
+                  ❌ Cancel Process
+                </button>
+              </div>
             </div>
           </form>
         </div>

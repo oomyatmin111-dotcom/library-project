@@ -88,19 +88,99 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  btnQuickSample.addEventListener("click", async () => {
+  let transcribeAbortCtrl = null;
+  let transcribeProgressInterval = null;
+
+  function updateTranscribeProgress(pct, statusText, activeStep) {
+    const pctBadge = document.getElementById("minute-progress-pct");
+    const fill = document.getElementById("minute-progress-fill");
+    const status = document.getElementById("minute-loading-text");
+    if (pctBadge) pctBadge.innerText = `${pct}%`;
+    if (fill) fill.style.width = `${pct}%`;
+    if (status) status.innerText = statusText;
+
+    ["m-step-1", "m-step-2", "m-step-3", "m-step-4"].forEach((id, idx) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (idx + 1 === activeStep) el.classList.add("active");
+        else el.classList.remove("active");
+      }
+    });
+  }
+
+  function startTranscribeProgress() {
     minuteLoading.classList.remove("hidden");
+    minuteLoading.classList.remove("error");
+    document.getElementById("minute-loading-title").innerText = "Transcribing & Generating PDF...";
+    let currentPct = 12;
+    updateTranscribeProgress(12, "ဗီဒီယို/အသံဖိုင် စစ်ဆေးပြီး အသံဖိုင် ခွဲထုတ်နေပါသည်...", 1);
+
+    transcribeProgressInterval = setInterval(() => {
+      if (currentPct < 35) {
+        currentPct += 6;
+        updateTranscribeProgress(currentPct, "အသံဖိုင်ကို Gemini AI သို့ Upload ပေးပို့နေပါသည်...", 2);
+      } else if (currentPct < 68) {
+        currentPct += 4;
+        updateTranscribeProgress(currentPct, "Gemini AI ဖြင့် စကားပြောသံများကို နားထောင်၍ Transcribe လုပ်နေပါသည်...", 3);
+      } else if (currentPct < 88) {
+        currentPct += 2;
+        updateTranscribeProgress(currentPct, "အစည်းအဝေး မှတ်တမ်း အပိုင်း (၁၀) ပိုင်းအတိုင်း ဖွဲ့စည်းနေပါသည်...", 3);
+      } else if (currentPct < 96) {
+        currentPct += 1;
+        updateTranscribeProgress(currentPct, "My Easy Job စံသတ်မှတ်ချက် PDF ဖိုင်သို့ Render ပြုလုပ်နေပါသည်...", 4);
+      }
+    }, 400);
+  }
+
+  function stopTranscribeProgress() {
+    if (transcribeProgressInterval) {
+      clearInterval(transcribeProgressInterval);
+      transcribeProgressInterval = null;
+    }
+  }
+
+  const btnCancelTranscribe = document.getElementById("btn-cancel-transcribe");
+  if (btnCancelTranscribe) {
+    btnCancelTranscribe.addEventListener("click", () => {
+      if (transcribeAbortCtrl) {
+        transcribeAbortCtrl.abort();
+        transcribeAbortCtrl = null;
+      }
+      stopTranscribeProgress();
+      minuteLoading.classList.add("error");
+      updateTranscribeProgress(0, "⚠️ လုပ်ငန်းစဉ်ကို Cancel ပြုလုပ်လိုက်ပါသည် (Cancelled by user)", 0);
+      document.getElementById("minute-loading-title").innerText = "Process Cancelled";
+      setTimeout(() => {
+        minuteLoading.classList.add("hidden");
+        minuteLoading.classList.remove("error");
+      }, 3500);
+    });
+  }
+
+  btnQuickSample.addEventListener("click", async () => {
+    transcribeAbortCtrl = new AbortController();
+    startTranscribeProgress();
     try {
-      const res = await fetch("/api/meeting-minutes/generate-sample-pdf", { method: "POST" });
+      const res = await fetch("/api/meeting-minutes/generate-sample-pdf", {
+        method: "POST",
+        signal: transcribeAbortCtrl.signal
+      });
       const data = await res.json();
-      minuteLoading.classList.add("hidden");
+      stopTranscribeProgress();
       if (data.pdf_url) {
+        updateTranscribeProgress(100, "✅ အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ဖန်တီးပြီးပါပြီ!", 4);
+        setTimeout(() => minuteLoading.classList.add("hidden"), 1200);
         window.open(data.pdf_url, "_blank");
         await loadMeetingMinutes();
       }
     } catch (err) {
-      minuteLoading.classList.add("hidden");
-      alert("Sample PDF generation failed: " + err.message);
+      stopTranscribeProgress();
+      if (err.name === "AbortError") {
+        console.log("Sample generate aborted");
+      } else {
+        minuteLoading.classList.add("error");
+        updateTranscribeProgress(0, "Sample PDF generation failed: " + err.message, 0);
+      }
     }
   });
 
@@ -119,24 +199,34 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append("file", fileInput.files[0]);
     }
 
-    minuteLoading.classList.remove("hidden");
+    transcribeAbortCtrl = new AbortController();
+    startTranscribeProgress();
+
     try {
       const res = await fetch("/api/meeting-minutes/upload-and-transcribe", {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: transcribeAbortCtrl.signal
       });
       const data = await res.json();
-      minuteLoading.classList.add("hidden");
+      stopTranscribeProgress();
       if (data.status === "success") {
-        alert("အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!");
+        updateTranscribeProgress(100, "✅ အစည်းအဝေးမှတ်တမ်း PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!", 4);
+        setTimeout(() => minuteLoading.classList.add("hidden"), 1500);
         if (data.pdf_url) window.open(data.pdf_url, "_blank");
         await loadMeetingMinutes();
       } else {
-        alert("Transcribe failed: " + (data.detail || "Error"));
+        minuteLoading.classList.add("error");
+        updateTranscribeProgress(0, "Transcribe failed: " + (data.detail || "Error"), 0);
       }
     } catch (err) {
-      minuteLoading.classList.add("hidden");
-      alert("Error: " + err.message);
+      stopTranscribeProgress();
+      if (err.name === "AbortError") {
+        console.log("Transcribe aborted by user");
+      } else {
+        minuteLoading.classList.add("error");
+        updateTranscribeProgress(0, "Error: " + err.message, 0);
+      }
     }
   });
 
@@ -227,19 +317,89 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  let reportAbortCtrl = null;
+  let reportProgressInterval = null;
+
+  function updateReportProgress(pct, statusText) {
+    const pctBadge = document.getElementById("report-progress-pct");
+    const fill = document.getElementById("report-progress-fill");
+    const status = document.getElementById("report-loading-text");
+    if (pctBadge) pctBadge.innerText = `${pct}%`;
+    if (fill) fill.style.width = `${pct}%`;
+    if (status) status.innerText = statusText;
+  }
+
+  function startReportProgress() {
+    const reportLoading = document.getElementById("report-loading");
+    if (!reportLoading) return;
+    reportLoading.classList.remove("hidden");
+    reportLoading.classList.remove("error");
+    let currentPct = 20;
+    updateReportProgress(20, "အစီရင်ခံစာ အချက်အလက်များ စုစည်းနေပါသည်...");
+
+    reportProgressInterval = setInterval(() => {
+      if (currentPct < 75) {
+        currentPct += 15;
+        updateReportProgress(currentPct, "DAILY WORK REPORT HTML template ဖွဲ့စည်းနေပါသည်...");
+      } else if (currentPct < 95) {
+        currentPct += 5;
+        updateReportProgress(currentPct, "My Easy Job PDF အဖြစ် Print ထုတ်ယူနေပါသည်...");
+      }
+    }, 300);
+  }
+
+  function stopReportProgress() {
+    if (reportProgressInterval) {
+      clearInterval(reportProgressInterval);
+      reportProgressInterval = null;
+    }
+  }
+
+  const btnCancelReport = document.getElementById("btn-cancel-report");
+  if (btnCancelReport) {
+    btnCancelReport.addEventListener("click", () => {
+      if (reportAbortCtrl) {
+        reportAbortCtrl.abort();
+        reportAbortCtrl = null;
+      }
+      stopReportProgress();
+      const reportLoading = document.getElementById("report-loading");
+      if (reportLoading) {
+        reportLoading.classList.add("error");
+        updateReportProgress(0, "⚠️ လုပ်ငန်းစဉ်ကို Cancel ပြုလုပ်လိုက်ပါသည် (Cancelled by user)");
+        setTimeout(() => {
+          reportLoading.classList.add("hidden");
+          reportLoading.classList.remove("error");
+        }, 3000);
+      }
+    });
+  }
+
   if (dailyReportForm) {
     dailyReportForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const payload = getDailyWorkReportPayload();
 
+      reportAbortCtrl = new AbortController();
+      startReportProgress();
+
       try {
         const res = await fetch("/api/reports/daily-generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: reportAbortCtrl.signal
         });
         const data = await res.json();
+        stopReportProgress();
+
         if (data.pdf_url) {
+          updateReportProgress(100, "✅ DAILY WORK REPORT PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!");
+          const reportLoading = document.getElementById("report-loading");
+          setTimeout(() => {
+            if (reportLoading) reportLoading.classList.add("hidden");
+          }, 1200);
+
           reportPreviewBox.innerHTML = `
             <div class="report-result-card" style="padding: 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;">
               <h3 style="color: #166534; margin-bottom: 6px;">🎉 DAILY WORK REPORT PDF အောင်မြင်စွာ ထုတ်ယူပြီးပါပြီ!</h3>
@@ -255,7 +415,16 @@ document.addEventListener("DOMContentLoaded", () => {
           window.open(data.pdf_url, "_blank");
         }
       } catch (err) {
-        alert("Daily report generation failed: " + err.message);
+        stopReportProgress();
+        if (err.name === "AbortError") {
+          console.log("Daily report generate aborted by user");
+        } else {
+          const reportLoading = document.getElementById("report-loading");
+          if (reportLoading) {
+            reportLoading.classList.add("error");
+            updateReportProgress(0, "Error: " + err.message);
+          }
+        }
       }
     });
   }
