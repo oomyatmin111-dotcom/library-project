@@ -1058,16 +1058,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Daily report submit -> Primary action: Generate Numbered Text & Copy
+  // Daily report submit -> Primary action: Generate Numbered Text & Copy into Review
   if (dailyReportForm) {
     dailyReportForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const text = renderActiveNumberedReportText(true);
-      alert("✅ Numbered Text Report ကို အောင်မြင်စွာ ထုတ်ယူပြီး Clipboard သို့ ကူးယူလိုက်ပါပြီ!\n(Telegram, Viber စသည်တို့သို့ တိုက်ရိုက် Paste ချနိုင်ပါသည်)");
+      const previewBox = document.getElementById("report-preview-box");
+      if (previewBox) {
+        previewBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      alert("✅ Daily Work Report ကို Text အနေဖြင့် Review တွင် အောင်မြင်စွာ ထုတ်ပေးပြီးပါပြီ!\n(Clipboard သို့လည်း တစ်ခါတည်း ကူးယူပြီးဖြစ်၍ Telegram / Viber သို့ တိုက်ရိုက် Paste ချနိုင်ပါသည်)");
     });
   }
 
-  // Copy Preview Text button
+  // Copy Preview Text button (Top)
   const btnCopyPreviewText = document.getElementById("btn-copy-preview-text");
   if (btnCopyPreviewText) {
     btnCopyPreviewText.addEventListener("click", () => {
@@ -1080,6 +1084,26 @@ document.addEventListener("DOMContentLoaded", () => {
         navigator.clipboard.writeText(text).then(() => {
           showReportCopySuccess();
           alert("✅ Report စာသားကို Clipboard သို့ အောင်မြင်စွာ ကူးယူပြီးပါပြီ!");
+        }).catch(err => {
+          alert("Copy failed: " + err.message);
+        });
+      }
+    });
+  }
+
+  // Copy Preview Text button (Bottom prominent)
+  const btnCopyBottomText = document.getElementById("btn-copy-bottom-text");
+  if (btnCopyBottomText) {
+    btnCopyBottomText.addEventListener("click", () => {
+      const textOutput = document.getElementById("report-text-output");
+      if (!textOutput || !textOutput.value) {
+        renderActiveNumberedReportText(false);
+      }
+      const text = textOutput ? textOutput.value : "";
+      if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+          showReportCopySuccess();
+          alert("✅ Report စာသားကို Clipboard သို့ အောင်မြင်စွာ ကူးယူပြီးပါပြီ!\n(Telegram, Viber စသည်တို့တွင် တိုက်ရိုက် Paste ချနိုင်ပါသည်)");
         }).catch(err => {
           alert("Copy failed: " + err.message);
         });
